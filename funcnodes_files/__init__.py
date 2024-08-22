@@ -2,9 +2,13 @@
 
 import funcnodes as fn
 import requests
+import os
+import base64
+from dataclasses import dataclass
+from typing import List
 
+__version__ = "0.1.2"
 
-__version__ = "0.1.1"
 
 class FileDownloadNode(fn.Node):
     """
@@ -172,9 +176,116 @@ class BytesToStringNode(fn.Node):
         self.outputs["string"].value = data.decode(encoding, errors="replace")
 
 
+@dataclass
+class FileUpload:
+    filename: str
+    content: str
+    path: str
+
+    @property
+    def bytedata(self):
+        return fn.types.databytes(base64.b64decode(self.content))
+
+    def __str__(self) -> str:
+        return f"FileUpload(filename={self.filename}, path={self.path})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+@dataclass
+class FolderUpload:
+    files: List[FileUpload]
+
+    @property
+    def bytedates(self):
+        return [file.bytedata for file in self.files]
+
+    @property
+    def filenames(self):
+        return [file.filename for file in self.files]
+
+    @property
+    def paths(self):
+        return [file.path for file in self.files]
+
+    def __str__(self) -> str:
+        return f"FolderUpload(files={self.files}, paths={self.paths})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class FileUploadNode(fn.Node):
+    """
+    Uploads a file
+    """
+
+    node_id = "files.upl"
+    node_name = "File Upload"
+
+    input_data = fn.NodeInput(id="input_data", type=FileUpload)
+    data = fn.NodeOutput(id="data", type=fn.types.databytes)
+    filename = fn.NodeOutput(id="filename", type=str)
+    path = fn.NodeOutput(id="path", type=str)
+
+    async def func(self, input_data: dict) -> None:
+        """
+        Uploads a file to a given URL.
+
+        Args:
+          url (str): The URL to upload the file to.
+          file (str): The path to the file to upload.
+        """
+
+        fileupload = FileUpload(**input_data)
+
+        self.outputs["data"].value = fileupload.bytedata
+        self.outputs["filename"].value = fileupload.filename
+        self.outputs["path"].value = fileupload.path
+
+
+class FolderUploadNode(fn.Node):
+    """
+    Uploads a file
+    """
+
+    node_id = "files.upl_folder"
+    node_name = "Folder Upload"
+
+    input_data = fn.NodeInput(id="input_data", type=FolderUpload)
+    dates = fn.NodeOutput(id="dates", type=List[fn.types.databytes])
+    filenames = fn.NodeOutput(id="filenames", type=List[str])
+    paths = fn.NodeOutput(id="paths", type=List[str])
+
+    files = fn.NodeOutput(id="files", type=List[FileUpload])
+
+    async def func(self, input_data: List[dict]) -> None:
+        """
+        Uploads a file to a given URL.
+
+        Args:
+          url (str): The URL to upload the file to.
+          file (str): The path to the file to upload.
+        """
+
+        print(input_data)
+        folderupload = FolderUpload([FileUpload(**file) for file in input_data])
+
+        self.outputs["dates"].value = folderupload.bytedates
+        self.outputs["filenames"].value = folderupload.filenames
+        self.outputs["paths"].value = folderupload.paths
+        self.outputs["files"].value = folderupload.files
+
+
 NODE_SHELF = fn.Shelf(
     name="Files",  # The name of the shelf.
-    nodes=[FileDownloadNode, BytesToStringNode],
+    nodes=[FileDownloadNode, BytesToStringNode, FileUploadNode, FolderUploadNode],
     description="Nodes for working with data and files.",
     subshelves=[],
 )
+
+
+REACT_PLUGIN = {
+    "module": os.path.join(os.path.dirname(__file__), "react_plugin", "js", "main.js"),
+}
