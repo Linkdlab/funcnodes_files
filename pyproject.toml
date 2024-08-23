@@ -9,8 +9,13 @@ readme = "README.md"
 python = "^3.11"
 funcnodes = "*"
 requests = "*"
+pre-commit = "*"
 
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.plugins."funcnodes.module"]
+module = "funcnodes_files"
+shelf = "funcnodes_files:NODE_SHELF"
