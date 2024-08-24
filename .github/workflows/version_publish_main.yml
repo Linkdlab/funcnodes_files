@@ -15,8 +15,6 @@ jobs:
 
       - name: Install Package
         uses: ./.github/actions/install_package
-        with:
-          python_version: 3.12
 
       - name: Run Tests
         run: poetry run pytest
