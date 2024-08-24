@@ -6,3 +6,5 @@ on: workflow_dispatch
 jobs:
   run:
     uses: Linkdlab/funcnodes_module/.github/workflows/main_update_version.yml@main
+    with:
+      pypi_token: ${{ secrets.PYPI_TOKEN }}
