@@ -7,7 +7,7 @@ import base64
 from dataclasses import dataclass
 from typing import List
 
-__version__ = "0.1.3"
+__version__ = "0.2.0"
 
 
 class FileDownloadNode(fn.Node):
