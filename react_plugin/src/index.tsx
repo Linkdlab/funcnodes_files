@@ -4,12 +4,20 @@ import {
   FuncNodesReactPlugin,
   RenderPluginFactoryProps,
 } from "@linkdlab/funcnodes_react_flow";
-import { InputRendererProps } from "@linkdlab/funcnodes_react_flow/dist/types/states/nodeio.t";
+import {
+  InputRendererProps,
+  OutputRendererProps,
+} from "@linkdlab/funcnodes_react_flow/dist/types/states/nodeio.t";
 
 type FileUploadProps = {
   filename: string;
   content: string;
   path: string;
+};
+
+type FileDownloadProps = {
+  filename: string;
+  content: string;
 };
 
 const renderpluginfactory = ({
@@ -140,10 +148,53 @@ const renderpluginfactory = ({
     );
   };
 
+  const FileDownload = ({ io }: OutputRendererProps) => {
+    const fileDownload = React.useRef<HTMLAnchorElement>(null);
+
+    const download = async () => {
+      const fullvalue = await fnrf_zst.worker?.get_io_full_value({
+        nid: io.node,
+        ioid: io.id,
+      });
+      const { filename, content } = fullvalue as FileDownloadProps;
+      // Convert the base64 content to a binary buffer
+      const byteCharacters = atob(content);
+      const byteNumbers = new Array(byteCharacters.length)
+        .fill(null)
+        .map((_, i) => byteCharacters.charCodeAt(i));
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray]); // Blob defaults to a generic MIME type (e.g., "application/octet-stream")
+
+      const url = URL.createObjectURL(blob); // Create an object URL for the blob
+      const a = fileDownload.current;
+      a?.setAttribute("href", url);
+      a?.setAttribute("download", filename);
+      a?.click();
+    };
+
+    return (
+      <div>
+        <a
+          ref={fileDownload}
+          style={{ display: "none" }}
+          href=""
+          download=""
+        ></a>
+
+        <button className="nodedatainput styledinput" onClick={download}>
+          Download File
+        </button>
+      </div>
+    );
+  };
+
   return {
     input_renderers: {
       "funcnodes_files.FileUpload": FileInput,
       "funcnodes_files.FolderUpload": FolderInput,
+    },
+    output_renderers: {
+      "funcnodes_files.FileDownload": FileDownload,
     },
   };
 };

@@ -1,5 +1,4 @@
 from all_nodes_test_base import TestAllNodesBase
-import funcnodes as fn
 import funcnodes_files as fnmodule
 import dataclasses
 
@@ -47,3 +46,11 @@ class TestAllNodes(TestAllNodesBase):
                 )
             ],
         )
+
+    async def test_file_download_local(self):
+        node = fnmodule.FileDownloadLocal()
+        data = fnmodule.FileDownload(filename="test.txt", content="AAAA")
+        node.inputs["data"].value = data.bytedata
+        node.inputs["filename"].value = data.filename
+        await node
+        self.assertEqual(node.get_output("output_data").value, data)
