@@ -7,7 +7,7 @@ import base64
 from dataclasses import dataclass
 from typing import List
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 
 class FileDownloadNode(fn.Node):
@@ -148,9 +148,51 @@ class FolderUploadNode(fn.Node):
         self.outputs["files"].value = folderupload.files
 
 
+@dataclass
+class FileDownload:
+    filename: str
+    content: str
+
+    @property
+    def bytedata(self):
+        return fn.types.databytes(base64.b64decode(self.content))
+
+    def __str__(self) -> str:
+        return f"FileDownload(filename={self.filename})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class FileDownloadLocal(fn.Node):
+    """
+    Downloads a file the funcnodes stream to a local file
+    """
+
+    node_id = "files.dld_local"
+    node_name = "File Download Local"
+
+    output_data = fn.NodeOutput(id="output_data", type=FileDownload)
+    data = fn.NodeInput(id="data", type=fn.types.databytes)
+    filename = fn.NodeInput(id="filename", type=str)
+
+    async def func(self, data: fn.types.databytes, filename: str) -> None:
+        """
+        Downloads a file from a given URL and sets the "data" output to the file's content as bytes.
+
+        Args:
+          url (str): The URL of the file to download.
+          timeout (float): The timeout in seconds for the download request.
+        """
+        self.outputs["output_data"].value = FileDownload(
+            filename=filename,
+            content=base64.b64encode(data).decode("utf-8"),
+        )
+
+
 NODE_SHELF = fn.Shelf(
     name="Files",  # The name of the shelf.
-    nodes=[FileDownloadNode, FileUploadNode, FolderUploadNode],
+    nodes=[FileDownloadNode, FileUploadNode, FolderUploadNode, FileDownloadLocal],
     description="Nodes for working with data and files.",
     subshelves=[],
 )
