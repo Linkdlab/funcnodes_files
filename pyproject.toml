@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "funcnodes-files"
-version = "0.2.1"
+version = "0.2.2"
 description = "A package for managing file downloads, uploads, and folder handling within FuncNodes workflows."
 authors = ["Julian Kimmig <julian.kimmig@gmx.net>"]
 readme = "README.md"
