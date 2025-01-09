@@ -3,17 +3,17 @@ import {
   RendererPlugin,
   FuncNodesReactPlugin,
   RenderPluginFactoryProps,
-} from "@linkdlab/funcnodes_react_flow";
-import {
+  // FuncNodesContext,
+  // FuncNodesReactFlowZustandInterface,
   InputRendererProps,
   OutputRendererProps,
-} from "@linkdlab/funcnodes_react_flow/dist/types/states/nodeio.t";
+} from "@linkdlab/funcnodes_react_flow";
 
-type FileUploadProps = {
-  filename: string;
-  content: string;
-  path: string;
-};
+// type FileUploadProps = {
+//   filename: string;
+//   content: string;
+//   path: string;
+// };
 
 type FileDownloadProps = {
   filename: string;
@@ -26,30 +26,48 @@ const renderpluginfactory = ({
 }: RenderPluginFactoryProps): RendererPlugin => {
   const FileInput = ({ io }: InputRendererProps) => {
     const fileInput = React.useRef<HTMLInputElement>(null);
+    const setProgress = (
+      p: number,
+      total: number | undefined,
+      start: number
+    ) => {
+      fnrf_zst.on_node_action({
+        type: "update",
+        id: io.node,
+        node: {
+          progress: {
+            prefix: "Uploading",
+            n: p,
+            total: total,
+            elapsed: (new Date().getTime() - start) / 1000,
+            unit_scale: true,
+            unit: "B",
+            unit_divisor: 1024,
+          },
+        },
+        from_remote: true,
+      });
+    };
 
-    const on_change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const on_change = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (!files || files.length === 0) return;
-      var reader = new FileReader();
-      reader.onload = function () {
-        const base64 = reader.result as string;
-        const pureBase64 = base64.split(",")[1];
 
-        const fileupload: FileUploadProps = {
-          filename: files[0].name,
-          content: pureBase64,
-          path: files[0].webkitRelativePath || "/",
-        };
+      const start = new Date().getTime();
 
-        if (!base64) return;
-        fnrf_zst.worker?.set_io_value({
-          nid: io.node,
-          ioid: io.id,
-          value: fileupload,
-          set_default: false,
-        });
-      };
-      reader.readAsDataURL(files[0]);
+      const resp: string[] | undefined = await fnrf_zst.worker?.upload_file(
+        files,
+        (loaded: number, total?: number) => {
+          setProgress(loaded, total, start);
+        }
+      );
+
+      fnrf_zst.worker?.set_io_value({
+        nid: io.node,
+        ioid: io.id,
+        value: resp !== undefined ? resp[0] : undefined,
+        set_default: true,
+      });
     };
 
     return (
@@ -79,50 +97,47 @@ const renderpluginfactory = ({
   const FolderInput = ({ io }: InputRendererProps) => {
     const fileInput = React.useRef<HTMLInputElement>(null);
 
-    const on_change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const setProgress = (
+      p: number,
+      total: number | undefined,
+      start: number
+    ) => {
+      fnrf_zst.on_node_action({
+        type: "update",
+        id: io.node,
+        node: {
+          progress: {
+            prefix: "Uploading",
+            n: p,
+            total: total,
+            elapsed: (new Date().getTime() - start) / 1000,
+            unit_scale: true,
+            unit: "B",
+            unit_divisor: 1024,
+          },
+        },
+        from_remote: true,
+      });
+    };
+    const on_change = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (!files || files.length === 0) return;
 
-      const filePromises = Array.from(files).map((file) => {
-        return new Promise<FileUploadProps>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = function () {
-            const base64 = reader.result as string;
-            const pureBase64 = base64.split(",")[1];
-            if (pureBase64) {
-              resolve({
-                filename: file.name,
-                path: file.webkitRelativePath || file.name,
-                content: pureBase64,
-              });
-            } else {
-              reject(new Error("Failed to read file content"));
-            }
-          };
-          reader.onerror = () => reject(new Error("File reading failed"));
-          reader.readAsDataURL(file);
-        });
+      const start = new Date().getTime();
+
+      const resp: string[] | undefined = await fnrf_zst.worker?.upload_file(
+        files,
+        (loaded: number, total?: number) => {
+          setProgress(loaded, total, start);
+        }
+      );
+      fnrf_zst.worker?.set_io_value({
+        nid: io.node,
+        ioid: io.id,
+        value: resp !== undefined ? resp : undefined,
+        set_default: true,
       });
-
-      Promise.all(filePromises)
-        .then((filesData) => {
-          const payload = {
-            nid: io.node,
-            ioid: io.id,
-            value: filesData,
-            set_default: false,
-          };
-
-          return fnrf_zst.worker?.set_io_value(payload);
-        })
-        .then(() => {
-          console.log("Folder uploaded");
-        })
-        .catch((err) => {
-          console.error("Error uploading folder:", err);
-        });
     };
-
     return (
       <div>
         <input
@@ -133,7 +148,9 @@ const renderpluginfactory = ({
           style={{ display: "none" }}
           ref={fileInput}
           /* @ts-expect-error */
-          webkitdirectory=""
+          webkitdirectory="true"
+          directory="true"
+          multiple
         />
         <button
           className="nodedatainput styledinput"
@@ -198,16 +215,8 @@ const renderpluginfactory = ({
     },
   };
 };
-const PlotlyRendererPlugin: RendererPlugin = {
-  handle_preview_renderers: {},
-  data_overlay_renderers: {},
-  data_preview_renderers: {},
-  data_view_renderers: {},
-  input_renderers: {},
-};
 
 const Plugin: FuncNodesReactPlugin = {
-  RendererPlugin: PlotlyRendererPlugin,
   renderpluginfactory: renderpluginfactory,
 };
 

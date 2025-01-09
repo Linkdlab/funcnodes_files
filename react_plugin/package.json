@@ -1,6 +1,6 @@
 {
-  "name": "plotly_demo_build",
-  "version": "1.0.0",
+  "name": "funcnodes_files",
+  "version": "0.1.0",
   "main": "dist/index.js",
   "license": "MIT",
   "source": "src/index.ts",
@@ -13,7 +13,7 @@
     "test": "mocha"
   },
   "dependencies": {
-    "@linkdlab/funcnodes_react_flow": "^0.3.1",
+    "@linkdlab/funcnodes_react_flow": ">=0.3.7",
     "typescript": "^5.4.5"
   },
   "devDependencies": {
