@@ -82,7 +82,7 @@ class FileUploadNode(fn.Node):
             filedata = file.read()
 
         self.outputs["data"].value = filedata
-        self.outputs["filename"].value = input_data
+        self.outputs["filename"].value = os.path.basename(fp)
         self.outputs["path"].value = fp
 
 
