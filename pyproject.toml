@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "funcnodes-files"
-version = "0.2.2"
+version = "0.2.3"
 description = "A package for managing file downloads, uploads, and folder handling within FuncNodes workflows."
 authors = ["Julian Kimmig <julian.kimmig@gmx.net>"]
 readme = "README.md"
@@ -14,7 +14,8 @@ download = "https://pypi.org/project/funcnodes-files/#files"
 
 [tool.poetry.dependencies]
 python = ">=3.11"
-funcnodes = "*"
+funcnodes = ">=0.5.6"
+funcnodes_core = ">=0.3.8"
 requests = "*"
 
 

@@ -7,7 +7,7 @@ import base64
 from dataclasses import dataclass
 from typing import List
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 
 
 class FileDownloadNode(fn.Node):
@@ -46,44 +46,8 @@ class FileDownloadNode(fn.Node):
         self.outputs["data"].value = response.content
 
 
-@dataclass
-class FileUpload:
-    filename: str
-    content: str
-    path: str
-
-    @property
-    def bytedata(self):
-        return fn.types.databytes(base64.b64decode(self.content))
-
-    def __str__(self) -> str:
-        return f"FileUpload(filename={self.filename}, path={self.path})"
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
-
-@dataclass
-class FolderUpload:
-    files: List[FileUpload]
-
-    @property
-    def bytedates(self):
-        return [file.bytedata for file in self.files]
-
-    @property
-    def filenames(self):
-        return [file.filename for file in self.files]
-
-    @property
-    def paths(self):
-        return [file.path for file in self.files]
-
-    def __str__(self) -> str:
-        return f"FolderUpload(files={self.files}, paths={self.paths})"
-
-    def __repr__(self) -> str:
-        return self.__str__()
+class FileUpload(str):
+    pass
 
 
 class FileUploadNode(fn.Node):
@@ -99,7 +63,7 @@ class FileUploadNode(fn.Node):
     filename = fn.NodeOutput(id="filename", type=str)
     path = fn.NodeOutput(id="path", type=str)
 
-    async def func(self, input_data: dict) -> None:
+    async def func(self, input_data: FileUpload) -> None:
         """
         Uploads a file to a given URL.
 
@@ -107,12 +71,23 @@ class FileUploadNode(fn.Node):
           url (str): The URL to upload the file to.
           file (str): The path to the file to upload.
         """
+        if self.nodespace is None:
+            raise Exception("Node not in a nodespace")
 
-        fileupload = FileUpload(**input_data)
+        fp = self.nodespace.get_file_path(input_data)
+        if fp is None or not os.path.exists(fp):
+            raise Exception(f"File not found: {input_data}")
 
-        self.outputs["data"].value = fileupload.bytedata
-        self.outputs["filename"].value = fileupload.filename
-        self.outputs["path"].value = fileupload.path
+        with open(fp, "rb") as file:
+            filedata = file.read()
+
+        self.outputs["data"].value = filedata
+        self.outputs["filename"].value = input_data
+        self.outputs["path"].value = fp
+
+
+class FolderUpload(list[FileUpload]):
+    pass
 
 
 class FolderUploadNode(fn.Node):
@@ -128,9 +103,7 @@ class FolderUploadNode(fn.Node):
     filenames = fn.NodeOutput(id="filenames", type=List[str])
     paths = fn.NodeOutput(id="paths", type=List[str])
 
-    files = fn.NodeOutput(id="files", type=List[FileUpload])
-
-    async def func(self, input_data: List[dict]) -> None:
+    async def func(self, input_data: FolderUpload) -> None:
         """
         Uploads a file to a given URL.
 
@@ -139,13 +112,24 @@ class FolderUploadNode(fn.Node):
           file (str): The path to the file to upload.
         """
 
-        print(input_data)
-        folderupload = FolderUpload([FileUpload(**file) for file in input_data])
+        if self.nodespace is None:
+            raise Exception("Node not in a nodespace")
 
-        self.outputs["dates"].value = folderupload.bytedates
-        self.outputs["filenames"].value = folderupload.filenames
-        self.outputs["paths"].value = folderupload.paths
-        self.outputs["files"].value = folderupload.files
+        filepaths = [self.nodespace.get_file_path(file) for file in input_data]
+        for fp in filepaths:
+            if fp is None or not os.path.exists(fp):
+                raise Exception(f"File not found: {fp}")
+
+        filedatas = []
+        for fp in filepaths:
+            with open(fp, "rb") as file:
+                filedatas.append(file.read())
+
+        filenames = [os.path.basename(fp) for fp in filepaths]
+
+        self.outputs["dates"].value = filedatas
+        self.outputs["filenames"].value = filenames
+        self.outputs["paths"].value = filepaths
 
 
 @dataclass
