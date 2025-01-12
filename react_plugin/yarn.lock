@@ -1665,10 +1665,10 @@
   resolved "https://registry.yarnpkg.com/@leichtgewicht/ip-codec/-/ip-codec-2.0.5.tgz#4fc56c15c580b9adb7dc3c333a134e540b44bfb1"
   integrity sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==
 
-"@linkdlab/funcnodes_react_flow@>=0.3.7":
-  version "0.3.7"
-  resolved "https://registry.yarnpkg.com/@linkdlab/funcnodes_react_flow/-/funcnodes_react_flow-0.3.7.tgz#b3d4970b082b82f2fa77c84f96bff86157b63456"
-  integrity sha512-Dzi0+0QOxsagSi+jAzmLOp8Br4oXFnmRuhoycNWCZ4WNyfL+Xt/aIKJueVGY6GSAO0FtSWiaKo6g6rqFMeQKOA==
+"@linkdlab/funcnodes_react_flow@>=0.3.9":
+  version "0.3.9"
+  resolved "https://registry.yarnpkg.com/@linkdlab/funcnodes_react_flow/-/funcnodes_react_flow-0.3.9.tgz#57392eee0316dd05e0818c5a66283cb9bc973ed6"
+  integrity sha512-pIjYTaHgKJcuXo6lMInVo0b6NqigdFSYNVWM24oFE8hV+UNE0rbD4HBNjSpy7NEbhA+WMFe+5vUrw+n5DbXgmg==
   dependencies:
     "@emotion/react" "^11.11.4"
     "@emotion/styled" "^11.11.5"

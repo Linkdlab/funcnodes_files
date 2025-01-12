@@ -52,20 +52,41 @@ const renderpluginfactory = ({
     const on_change = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (!files || files.length === 0) return;
+      const nodestore = fnrf_zst.nodespace.get_node(io.node);
+      if (!nodestore) return;
+      let node = nodestore.getState();
+      let parent_io = node.io["parent"];
+      if (!parent_io) return;
+      let parentpath = undefined;
+      for (let i = 0; i < 10; i++) {
+        if (parent_io.fullvalue !== undefined) {
+          parentpath = parent_io.fullvalue.path;
+          break;
+        }
+        if (parent_io.try_get_full_value === undefined) {
+          break;
+        }
+        parent_io.try_get_full_value();
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        node = nodestore.getState();
+        parent_io = node.io["parent"];
+        if (!parent_io) break;
+      }
 
       const start = new Date().getTime();
 
-      const resp: string[] | undefined = await fnrf_zst.worker?.upload_file(
-        files,
-        (loaded: number, total?: number) => {
+      const resp: string[] | undefined = await fnrf_zst.worker?.upload_file({
+        files: files,
+        onProgressCallback: (loaded: number, total?: number) => {
           setProgress(loaded, total, start);
-        }
-      );
+        },
+        root: parentpath,
+      });
 
       fnrf_zst.worker?.set_io_value({
         nid: io.node,
         ioid: io.id,
-        value: resp !== undefined ? resp[0] : undefined,
+        value: resp,
         set_default: true,
       });
     };
@@ -122,6 +143,26 @@ const renderpluginfactory = ({
     const on_change = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (!files || files.length === 0) return;
+      const nodestore = fnrf_zst.nodespace.get_node(io.node);
+      if (!nodestore) return;
+      let node = nodestore.getState();
+      let parent_io = node.io["parent"];
+      if (!parent_io) return;
+      let parentpath = undefined;
+      for (let i = 0; i < 10; i++) {
+        if (parent_io.fullvalue !== undefined) {
+          parentpath = parent_io.fullvalue.path;
+          break;
+        }
+        if (parent_io.try_get_full_value === undefined) {
+          break;
+        }
+        parent_io.try_get_full_value();
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        node = nodestore.getState();
+        parent_io = node.io["parent"];
+        if (!parent_io) break;
+      }
 
       const start = new Date().getTime();
 
@@ -129,12 +170,13 @@ const renderpluginfactory = ({
         files,
         (loaded: number, total?: number) => {
           setProgress(loaded, total, start);
-        }
+        },
+        (root = parentpath)
       );
       fnrf_zst.worker?.set_io_value({
         nid: io.node,
         ioid: io.id,
-        value: resp !== undefined ? resp : undefined,
+        value: resp,
         set_default: true,
       });
     };

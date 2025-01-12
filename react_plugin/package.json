@@ -13,7 +13,7 @@
     "test": "mocha"
   },
   "dependencies": {
-    "@linkdlab/funcnodes_react_flow": ">=0.3.7",
+    "@linkdlab/funcnodes_react_flow": ">=0.3.9",
     "typescript": "^5.4.5"
   },
   "devDependencies": {
