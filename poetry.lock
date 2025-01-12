@@ -561,14 +561,14 @@ funcnodes-core = ">=0.3.4"
 
 [[package]]
 name = "funcnodes-core"
-version = "0.3.8"
+version = "0.3.9"
 description = "core package for funcnodes"
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "funcnodes_core-0.3.8-py3-none-any.whl", hash = "sha256:131aadf5284419a1e462fab065e0869080be494a6a349536d44632b90ee70104"},
-    {file = "funcnodes_core-0.3.8.tar.gz", hash = "sha256:3717c2ca13689d95d647d5a65fa9c8af8d06aaabc14763857400550997f424a7"},
+    {file = "funcnodes_core-0.3.9-py3-none-any.whl", hash = "sha256:63ace2d535ab68c429b607ea9cf3badef3c41dad8fae862de64585973607ace4"},
+    {file = "funcnodes_core-0.3.9.tar.gz", hash = "sha256:027a9309c64b62f94d2d85063817d361ad77badef577525938c10ef1a7bb43d7"},
 ]
 
 [package.dependencies]
@@ -1793,4 +1793,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11"
-content-hash = "3a463c9ca369518bfa8e92fc645bc422234c768e02c9ba8edc48fa106e4d4197"
+content-hash = "feb027018b28ab8d985106eb6b388915c449cc364e8cbd23be1726a81c085605"
