@@ -166,13 +166,13 @@ const renderpluginfactory = ({
 
       const start = new Date().getTime();
 
-      const resp: string[] | undefined = await fnrf_zst.worker?.upload_file(
-        files,
-        (loaded: number, total?: number) => {
+      const resp: string[] | undefined = await fnrf_zst.worker?.upload_file({
+        files: files,
+        onProgressCallback: (loaded: number, total?: number) => {
           setProgress(loaded, total, start);
         },
-        (root = parentpath)
-      );
+        root: parentpath,
+      });
       fnrf_zst.worker?.set_io_value({
         nid: io.node,
         ioid: io.id,
