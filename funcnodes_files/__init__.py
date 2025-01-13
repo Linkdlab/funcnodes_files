@@ -13,7 +13,7 @@ from io import BytesIO
 import asyncio
 import shutil
 
-__version__ = "0.2.5"
+__version__ = "0.2.6"
 
 
 def path_encoder(obj, preview=False):
@@ -544,10 +544,10 @@ class FileDownloadLocal(fn.Node):
                 raise Exception("Node not in a nodespace")
             root = Path(self.nodespace.get_property("files_dir"))
             fullpath = validate_path(data.path, root)
-            with open(fullpath, "rb") as file:
-                data = file.read()
             if filename is None:
                 filename = data.name
+            with open(fullpath, "rb") as file:
+                data = file.read()
 
         if filename is None:
             raise Exception("Filename must be provided if the data is passed as bytes")
