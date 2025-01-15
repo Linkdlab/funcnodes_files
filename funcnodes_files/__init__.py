@@ -13,7 +13,7 @@ from io import BytesIO
 import asyncio
 import shutil
 
-__version__ = "0.2.6"
+__version__ = "0.2.7"
 
 
 def path_encoder(obj, preview=False):
@@ -595,6 +595,47 @@ class FileDeleteNode(fn.Node):
                 shutil.rmtree(fullpath)
 
 
+class SaveFile(fn.Node):
+    """
+    Saves a file
+    """
+
+    node_id = "files.save"
+    node_name = "Save File"
+
+    data = fn.NodeInput(id="data", type=fn.types.databytes)
+    filename = fn.NodeInput(id="filename", type=str)
+    path = fn.NodeInput(
+        id="path", type=Optional[Union[str, PathDictData]], default=None
+    )
+
+    async def func(
+        self,
+        data: fn.types.databytes,
+        filename: str,
+        path: Optional[Union[str, PathDictData]] = None,
+    ) -> None:
+        if self.nodespace is None:
+            raise Exception("Node not in a nodespace")
+        root = Path(self.nodespace.get_property("files_dir"))
+        if isinstance(path, PathDictData):
+            path = path.path
+        elif path is None:
+            path = root
+        else:
+            path = Path(path)
+
+        path = path / filename
+
+        path = validate_path(path, root)
+
+        if not os.path.exists(path.parent):
+            os.makedirs(path.parent)
+
+        with open(path, "wb") as file:
+            file.write(data)
+
+
 NODE_SHELF = fn.Shelf(
     name="Files",  # The name of the shelf.
     nodes=[
@@ -604,6 +645,7 @@ NODE_SHELF = fn.Shelf(
         FileDownloadLocal,
         BrowseFolder,
         OpenFile,
+        SaveFile,
         PathDict,
         FileInfo,
         FileDeleteNode,
