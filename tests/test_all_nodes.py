@@ -11,10 +11,10 @@ class TestAllNodes(TestAllNodesBase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
         self.ns = fn.NodeSpace()
-        root = Path(os.path.join(os.path.dirname(__file__), "files"))
-        self.ns.set_property("files_dir", str(root))
-        self.testfile = Path(os.path.join(root, "test.txt"))
-        self.reltestfilepath = self.testfile.relative_to(root)
+        self.root = Path(os.path.join(os.path.dirname(__file__), "files"))
+        self.ns.set_property("files_dir", str(self.root))
+        self.testfile = Path(os.path.join(self.root, "test.txt"))
+        self.reltestfilepath = self.testfile.relative_to(self.root)
 
     async def test_file_download(self):
         node = fnmodule.FileDownloadNode()
@@ -108,3 +108,18 @@ class TestAllNodes(TestAllNodesBase):
         )
         await node
         self.assertFalse(testfile.exists())
+
+    async def test_save_file(self):
+        node = fnmodule.SaveFile()
+        self.ns.add_node_instance(node)
+        node.inputs["data"].value = b"test"
+        node.inputs["filename"].value = "test_save.txt"
+        await node
+        self.assertTrue((self.root / "test_save.txt").exists())
+        os.remove(self.root / "test_save.txt")
+
+        node.inputs["path"].value = "savetest"
+        await node
+        self.assertTrue((self.root / "savetest" / "test_save.txt").exists())
+        os.remove(self.root / "savetest" / "test_save.txt")
+        os.rmdir(self.root / "savetest")
