@@ -55,24 +55,26 @@ def make_file_info(fullpath: Path, root: Path) -> FileInfoData:
     )
 
 
-def make_path_dict(fullpath: Path, root: Path) -> PathDictData:
+def make_path_dict(fullpath: Path, root: Path, levels=999) -> PathDictData:
     def _recurisive_fill(
         path: Path,
+        _levels: int,
     ) -> PathDictData:
-        content = os.listdir(path)
         files = []
         dirs = []
-        for f in content:
-            fpath = path / f
-            if os.path.isdir(fpath):
-                dirs.append(_recurisive_fill(fpath))
-            else:
-                files.append(
-                    make_file_info(
-                        fullpath=fpath,
-                        root=root,
+        if _levels > 0:
+            content = os.listdir(path)
+            for f in content:
+                fpath = path / f
+                if os.path.isdir(fpath):
+                    dirs.append(_recurisive_fill(fpath, _levels=_levels - 1))
+                else:
+                    files.append(
+                        make_file_info(
+                            fullpath=fpath,
+                            root=root,
+                        )
                     )
-                )
         relpath = path.relative_to(root)
         return PathDictData(
             path=relpath,
@@ -81,7 +83,7 @@ def make_path_dict(fullpath: Path, root: Path) -> PathDictData:
             name=relpath.name,
         )
 
-    return _recurisive_fill(fullpath)
+    return _recurisive_fill(fullpath, _levels=levels)
 
 
 def validate_path(path: Path, root: Path):
@@ -101,7 +103,7 @@ class PathDict(fn.Node):
 
     node_id = "files.path_dict"
     node_name = "Path Dict"
-    parent = fn.NodeInput(id="parent", type=Optional[PathDictData], default=None)
+    parent = fn.NodeInput(id="parent", type=Union[str, PathDictData], default=".")
     path = fn.NodeInput(id="path", type=str, default=".")
     data = fn.NodeOutput(id="data", type=PathDictData)
 
@@ -126,11 +128,13 @@ class PathDict(fn.Node):
         else:
             self.get_input("path").update_value_options(options=None)
 
-    async def func(self, path: str, parent: Optional[PathDictData] = None) -> None:
+    async def func(self, path: str, parent: Union[str, PathDictData] = ".") -> None:
         if self.nodespace is None:
             raise Exception("Node not in a nodespace")
 
         root = Path(self.nodespace.get_property("files_dir"))
+        if isinstance(parent, str):
+            parent = make_path_dict(validate_path(Path(parent), root), root, levels=1)
 
         if path == "." and parent:
             self.outputs["data"].value = parent
@@ -184,7 +188,7 @@ class OpenFile(fn.Node):
 
     node_id = "files.open_file"
     node_name = "Open File"
-    parent = fn.NodeInput(id="parent", type=Optional[PathDictData], default=None)
+    parent = fn.NodeInput(id="parent", type=Union[str, PathDictData], default=".")
     path = fn.NodeInput(
         id="path",
         type=Union[str, FileInfoData],
@@ -216,7 +220,7 @@ class OpenFile(fn.Node):
     async def func(
         self,
         path: Union[str, FileInfoData],
-        parent: Optional[PathDictData] = None,
+        parent: Union[str, PathDictData] = ".",
     ) -> None:
         """
         Uploads a file to a given URL.
@@ -228,6 +232,8 @@ class OpenFile(fn.Node):
         if self.nodespace is None:
             raise Exception("Node not in a nodespace")
         root = Path(self.nodespace.get_property("files_dir"))
+        if isinstance(parent, str):
+            parent = make_path_dict(validate_path(Path(parent), root), root, levels=1)
         if isinstance(path, str):
             if parent:
                 path = parent.path / path
@@ -246,7 +252,7 @@ class FileInfo(fn.Node):
 
     node_id = "files.file_info"
     node_name = "File Info"
-    parent = fn.NodeInput(id="parent", type=Optional[PathDictData], default=None)
+    parent = fn.NodeInput(id="parent", type=Union[str, PathDictData], default=".")
     path = fn.NodeInput(
         id="path",
         type=Union[str, FileInfoData],
@@ -285,6 +291,9 @@ class FileInfo(fn.Node):
             raise Exception("Node not in a nodespace")
 
         root = Path(self.nodespace.get_property("files_dir"))
+        if isinstance(parent, str):
+            parent = make_path_dict(validate_path(Path(parent), root), root, levels=1)
+
         if isinstance(path, str):
             if parent:
                 path = parent.path / path
@@ -310,7 +319,10 @@ class FileUploadNode(fn.Node):
     node_name = "File Upload"
 
     parent = fn.NodeInput(
-        id="parent", type=Optional[PathDictData], default=None, does_trigger=False
+        id="parent",
+        type=Union[str, PathDictData],
+        default=".",
+        does_trigger=False,
     )
     input_data = fn.NodeInput(id="input_data", type=FileUpload)
     load = fn.NodeInput(id="load", type=bool, default=True, does_trigger=False)
@@ -373,13 +385,18 @@ class FolderUploadNode(fn.Node):
     node_name = "Folder Upload"
 
     parent = fn.NodeInput(
-        id="parent", type=Optional[PathDictData], default=".", does_trigger=False
+        id="parent",
+        type=Union[str, PathDictData],
+        default=".",
+        does_trigger=False,
     )
     input_data = fn.NodeInput(id="input_data", type=FolderUpload)
 
     dir = fn.NodeOutput(id="dir", type=PathDictData)
 
-    async def func(self, input_data: FolderUpload, parent=".") -> None:
+    async def func(
+        self, input_data: FolderUpload, parent: Union[str, PathDictData] = "."
+    ) -> None:
         """
         Uploads a file to a given URL.
 
@@ -411,7 +428,10 @@ class FileDownloadNode(fn.Node):
 
     url = fn.NodeInput(id="url", type="str")
     parent = fn.NodeInput(
-        id="parent", type=Optional[PathDictData], default=None, does_trigger=False
+        id="parent",
+        type=Union[str, PathDictData],
+        default=".",
+        does_trigger=False,
     )
     load = fn.NodeInput(id="load", type=bool, default=True, does_trigger=False)
     save = fn.NodeInput(id="save", type=bool, default=False, does_trigger=False)
@@ -426,7 +446,7 @@ class FileDownloadNode(fn.Node):
     async def func(
         self,
         url: str,
-        parent: Optional[PathDictData] = None,
+        parent: Union[str, PathDictData] = ".",
         load: bool = True,
         save: bool = False,
         filename: Optional[str] = None,
@@ -445,6 +465,10 @@ class FileDownloadNode(fn.Node):
             if self.nodespace is None:
                 raise Exception("Node not in a nodespace")
             root = Path(self.nodespace.get_property("files_dir"))
+            if isinstance(parent, str):
+                parent = make_path_dict(
+                    validate_path(Path(parent), root), root, levels=1
+                )
             if parent:
                 path = validate_path(parent.path, root)
             else:
