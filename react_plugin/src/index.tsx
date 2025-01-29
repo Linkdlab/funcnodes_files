@@ -59,7 +59,7 @@ const renderpluginfactory = ({
       if (!parent_io) return;
       let parentpath = undefined;
       for (let i = 0; i < 10; i++) {
-        if (parent_io.fullvalue !== undefined) {
+        if (parent_io.fullvalue) {
           parentpath = parent_io.fullvalue.path;
           break;
         }
@@ -150,7 +150,7 @@ const renderpluginfactory = ({
       if (!parent_io) return;
       let parentpath = undefined;
       for (let i = 0; i < 10; i++) {
-        if (parent_io.fullvalue !== undefined) {
+        if (parent_io.fullvalue) {
           parentpath = parent_io.fullvalue.path;
           break;
         }
