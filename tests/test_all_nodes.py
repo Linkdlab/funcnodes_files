@@ -14,13 +14,10 @@ class TestAllNodes(TestAllNodesBase):
         self.root = Path(os.path.join(os.path.dirname(__file__), "files"))
         self.ns.set_property("files_dir", str(self.root))
         # in case the test file is deleted
-        testfile = Path(os.path.join(self.root, "_test.txt"))
         self.testfile = Path(os.path.join(self.root, "test.txt"))
         # copy testfile
-        with open(testfile, "rb") as f:
-            data = f.read()
         with open(self.testfile, "wb") as f:
-            f.write(data)
+            f.write(b"hello\n")
 
         self.testfile = Path(os.path.join(self.root, "test.txt"))
         self.reltestfilepath = self.testfile.relative_to(self.root)
