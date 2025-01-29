@@ -13,7 +13,7 @@ from io import BytesIO
 import asyncio
 import shutil
 
-__version__ = "0.2.7"
+__version__ = "0.2.8"
 
 
 def path_encoder(obj, preview=False):
@@ -135,6 +135,8 @@ class PathDict(fn.Node):
         if path == "." and parent:
             self.outputs["data"].value = parent
             return
+        if parent:
+            path = parent.path / path
         targetpath = Path(path)
         fullpath = validate_path(targetpath, root)
 
@@ -227,7 +229,9 @@ class OpenFile(fn.Node):
             raise Exception("Node not in a nodespace")
         root = Path(self.nodespace.get_property("files_dir"))
         if isinstance(path, str):
-            fullpath = root / Path(path)
+            if parent:
+                path = parent.path / path
+            fullpath = validate_path(Path(path), root)
             path = make_file_info(fullpath, root)
 
         fullpath = validate_path(path.path, root)
@@ -282,6 +286,8 @@ class FileInfo(fn.Node):
 
         root = Path(self.nodespace.get_property("files_dir"))
         if isinstance(path, str):
+            if parent:
+                path = parent.path / path
             fullpath = validate_path(Path(path), root)
             path = make_file_info(fullpath, root)
 
@@ -304,16 +310,21 @@ class FileUploadNode(fn.Node):
     node_name = "File Upload"
 
     parent = fn.NodeInput(
-        id="parent", type=Optional[PathDictData], default=".", does_trigger=False
+        id="parent", type=Optional[PathDictData], default=None, does_trigger=False
     )
     input_data = fn.NodeInput(id="input_data", type=FileUpload)
-    load = fn.NodeInput(id="load", type=bool, default=False, does_trigger=False)
+    load = fn.NodeInput(id="load", type=bool, default=True, does_trigger=False)
+    save = fn.NodeInput(id="save", type=bool, default=False, does_trigger=False)
 
     data = fn.NodeOutput(id="data", type=fn.types.databytes)
     file = fn.NodeOutput(id="file", type=FileInfoData)
 
     async def func(
-        self, input_data: FileUpload, load: bool = False, parent="."
+        self,
+        input_data: FileUpload,
+        load: bool = True,
+        save: bool = False,
+        parent: Optional[PathDictData] = None,  # noqa F821
     ) -> None:
         """
         Uploads a file to a given URL.
@@ -322,12 +333,16 @@ class FileUploadNode(fn.Node):
           url (str): The URL to upload the file to.
           file (str): The path to the file to upload.
         """
+
+        if not load and not save:
+            raise Exception("Either load or save must be True")
+
         if self.nodespace is None:
             raise Exception("Node not in a nodespace")
 
         root = Path(self.nodespace.get_property("files_dir"))
         fp = validate_path(Path(input_data), root)
-
+        print("XXX", load, save, fp)
         if fp is None or not os.path.exists(fp):
             raise Exception(f"File not found: {input_data}")
 
@@ -338,7 +353,11 @@ class FileUploadNode(fn.Node):
         else:
             self.outputs["data"].value = fn.NoValue
 
-        self.outputs["file"].value = make_file_info(fp, root)
+        if not save:
+            os.remove(fp)
+            self.outputs["file"].value = fn.NoValue
+        else:
+            self.outputs["file"].value = make_file_info(fp, root)
 
 
 class FolderUpload(str):
