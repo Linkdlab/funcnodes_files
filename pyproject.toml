@@ -1,6 +1,6 @@
 [project]
 name = "funcnodes-files"
-version = "0.2.7"
+version = "0.2.8"
 description = "A package for managing file downloads, uploads, and folder handling within FuncNodes workflows."
 authors = [
 {name = "Julian Kimmig", email = "julian.kimmig@linkdlab.de>"}
