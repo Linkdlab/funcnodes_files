@@ -13,7 +13,7 @@ from io import BytesIO
 import asyncio
 import shutil
 
-__version__ = "0.2.9"
+__version__ = "0.2.10"
 
 
 def path_encoder(obj, preview=False):
@@ -418,6 +418,9 @@ class FolderUploadNode(fn.Node):
         self.outputs["dir"].value = pathdict
 
 
+_DEFAULT_USER_AGENT = f"funcnodes-files/{__version__} funcnodes/{fn.__version__}"
+
+
 class FileDownloadNode(fn.Node):
     """
     Downloads a file from a given URL and returns the file's content as bytes.
@@ -441,6 +444,11 @@ class FileDownloadNode(fn.Node):
 
     data = fn.NodeOutput(id="data", type=fn.types.databytes)
     file = fn.NodeOutput(id="file", type=FileInfoData)
+
+    user_agent = fn.NodeInput(
+        id="user_agent", type=str, default=_DEFAULT_USER_AGENT, hidden=True
+    )
+    headers = fn.NodeInput(id="headers", type=Optional[dict], default=None, hidden=True)
     default_trigger_on_create = False
 
     async def func(
@@ -450,6 +458,8 @@ class FileDownloadNode(fn.Node):
         load: bool = True,
         save: bool = False,
         filename: Optional[str] = None,
+        user_agent: str = _DEFAULT_USER_AGENT,
+        headers: Optional[dict] = None,
     ) -> None:
         """
         Downloads a file from a given URL and sets the "data" output to the file's content as bytes.
@@ -474,9 +484,13 @@ class FileDownloadNode(fn.Node):
             else:
                 path = root
 
-        def _dl():
-            nonlocal filename
-            with requests.get(url, stream=True) as r:
+        if headers is None:
+            headers = {}
+        if user_agent:
+            headers["User-Agent"] = user_agent
+
+        def _dl(filename, headers):
+            with requests.get(url, stream=True, headers=headers) as r:
                 r.raise_for_status()
 
                 # Try to get the filename from the Content-Disposition header
@@ -541,7 +555,7 @@ class FileDownloadNode(fn.Node):
             else:
                 self.outputs["file"].value = fn.NoValue
 
-        await asyncio.to_thread(_dl)
+        await asyncio.to_thread(_dl, filename=filename, headers=headers)
 
 
 @dataclass
