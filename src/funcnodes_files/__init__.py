@@ -13,7 +13,7 @@ from io import BytesIO
 import asyncio
 import shutil
 
-__version__ = "0.2.10"
+__version__ = "0.2.11"
 
 
 def path_encoder(obj, preview=False):
