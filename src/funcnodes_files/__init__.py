@@ -260,6 +260,7 @@ class FileInfo(fn.Node):
     size = fn.NodeOutput(id="size", type=int)
     modified = fn.NodeOutput(id="modified", type=float)
     created = fn.NodeOutput(id="created", type=float)
+    name = fn.NodeOutput(id="name", type=str)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -304,6 +305,7 @@ class FileInfo(fn.Node):
         self.outputs["size"].value = os.path.getsize(fullpath)
         self.outputs["modified"].value = os.path.getmtime(fullpath)
         self.outputs["created"].value = os.path.getctime(fullpath)
+        self.outputs["name"].value = fullpath.name
 
 
 class FileUpload(str):

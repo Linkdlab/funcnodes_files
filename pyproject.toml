@@ -2,44 +2,50 @@
 name = "funcnodes-files"
 version = "0.2.10"
 description = "A package for managing file downloads, uploads, and folder handling within FuncNodes workflows."
-authors = [
-{name = "Julian Kimmig", email = "julian.kimmig@linkdlab.de>"}
-]
 readme = "README.md"
-license = "AGPL-3.0"
-classifiers = [
-    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
-    ]
-
-
+classifiers = [ "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",]
 requires-python = ">=3.11"
 dependencies = [
-    "funcnodes-core>=0.3.9",
-    "funcnodes>=0.5.6",
-    "funcnodes-react-flow>=0.3.3",
-    "requests"
+ "funcnodes-core>=0.3.9",
+ "funcnodes>=0.5.6",
+ "funcnodes-react-flow>=0.3.3",
+ "requests",
+]
+[[project.authors]]
+name = "Julian Kimmig"
+email = "julian.kimmig@linkdlab.de"
 
+[dependency-groups]
+dev = [
+ "funcnodes-module>=0.2.8",
+ "pre-commit>=4.1.0",
+ "pytest>=8.3.4",
 ]
 
+[build-system]
+requires = [ "setuptools>=42",]
+build-backend = "setuptools.build_meta"
+
+[project.license]
+text = "AGPL-3.0"
 
 [project.urls]
-homepage  = "https://github.com/Linkdlab/funcnodes_files"
-source  = "https://github.com/Linkdlab/funcnodes_files"
-tracker  = "https://github.com/Linkdlab/funcnodes_files/issues"
+homepage = "https://github.com/Linkdlab/funcnodes_files"
+source = "https://github.com/Linkdlab/funcnodes_files"
+tracker = "https://github.com/Linkdlab/funcnodes_files/issues"
 download = "https://pypi.org/project/funcnodes-files/#files"
-
-
-
-
-[tool.poetry.group.dev.dependencies]
-pre-commit = "*"
-pytest = "*"
-funcnodes-module = "^0.1.20"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
 
 [project.entry-points."funcnodes.module"]
 module = "funcnodes_files"
 shelf = "funcnodes_files:NODE_SHELF"
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = [ "src",]
+
+# [tool.poetry.group.dev.dependencies]
+# pre-commit = "*"
+# pytest = "*"
+# funcnodes-module = "^0.1.20"

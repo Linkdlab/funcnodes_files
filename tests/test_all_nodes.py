@@ -95,6 +95,7 @@ class TestAllNodes(TestAllNodesBase):
         self.assertIsInstance(node.get_output("size").value, int)
         self.assertIsInstance(node.get_output("created").value, float)
         self.assertIsInstance(node.get_output("modified").value, float)
+        self.assertEqual(node.get_output("name").value, "test.txt")
 
     async def test_pathdict(self):
         node = fnmodule.PathDict()
