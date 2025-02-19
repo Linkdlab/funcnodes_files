@@ -1,7 +1,6 @@
 """Frontend for working with data"""
 
 import funcnodes as fn
-import requests
 import os
 import base64
 from dataclasses import dataclass
@@ -10,8 +9,8 @@ import funcnodes_core
 from pathlib import Path
 from urllib.parse import unquote
 from io import BytesIO
-import asyncio
 import shutil
+from asynctoolkit.defaults.http import HTTPTool
 
 __version__ = "0.2.11"
 
@@ -491,73 +490,66 @@ class FileDownloadNode(fn.Node):
         if user_agent:
             headers["User-Agent"] = user_agent
 
-        def _dl(filename, headers):
-            with requests.get(url, stream=True, headers=headers) as r:
-                r.raise_for_status()
+        async with await HTTPTool().run(url, headers=headers, stream=True) as response:
+            await response.raise_for_status()
 
-                # Try to get the filename from the Content-Disposition header
-                content_disposition = r.headers.get("Content-Disposition")
-                if filename is None and save:
-                    if content_disposition:
-                        # Extract filename from Content-Disposition header
-                        filename = (
-                            content_disposition.split("filename=")[-1]
-                            .strip('"')
-                            .strip("'")
-                        )
-                        filename = unquote(
-                            filename
-                        )  # Decode URL-encoded characters if present
-                    else:
-                        # Fallback: Use the URL's last segment as filename
-                        filename = unquote(url.split("/")[-1])
-                # Get the total size from the headers
-                total_size = int(r.headers.get("Content-Length", 0)) or None
-                value = fn.NoValue
-
-                if save:
-                    fullpath = path / filename
-                    with (
-                        open(fullpath, "wb") as f,
-                        self.progress(
-                            total=total_size,
-                            unit="B",
-                            unit_scale=True,
-                            unit_divisor=1024,
-                            desc=filename,
-                        ) as progress,
-                    ):
-                        for chunk in r.iter_content(chunk_size=8192):
-                            if chunk:
-                                f.write(chunk)
-                                progress.update(len(chunk))
-                    if load:
-                        with open(fullpath, "rb") as f:
-                            value = fn.types.databytes(f.read())
+            headers = await response.headers()
+            content_disposition = headers.get("Content-Disposition")
+            if filename is None and save:
+                if content_disposition:
+                    # Extract filename from Content-Disposition header
+                    filename = (
+                        content_disposition.split("filename=")[-1].strip('"').strip("'")
+                    )
+                    filename = unquote(filename)
                 else:
-                    with (
-                        BytesIO() as f,
-                        self.progress(
-                            total=total_size,
-                            unit="B",
-                            unit_scale=True,
-                            unit_divisor=1024,
-                            desc=filename,
-                        ) as progress,
-                    ):
-                        for chunk in r.iter_content(chunk_size=8192):
-                            if chunk:
-                                f.write(chunk)
-                                progress.update(len(chunk))
-                        value = fn.types.databytes(f.getvalue())
+                    # Fallback: Use the URL's last segment as filename
+                    filename = unquote(url.split("/")[-1])
 
-            self.outputs["data"].value = value
+            total_size = headers.get("Content-Length", 0) or None
+            value = fn.NoValue
+
             if save:
-                self.outputs["file"].value = make_file_info(fullpath, root)
+                fullpath = path / filename
+                with (
+                    open(fullpath, "wb") as f,
+                    self.progress(
+                        total=total_size,
+                        unit="B",
+                        unit_scale=True,
+                        unit_divisor=1024,
+                        desc=filename,
+                    ) as progress,
+                ):
+                    async for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+                            progress.update(len(chunk))
+                if load:
+                    with open(fullpath, "rb") as f:
+                        value = fn.types.databytes(f.read())
             else:
-                self.outputs["file"].value = fn.NoValue
+                with (
+                    BytesIO() as f,
+                    self.progress(
+                        total=total_size,
+                        unit="B",
+                        unit_scale=True,
+                        unit_divisor=1024,
+                        desc=filename,
+                    ) as progress,
+                ):
+                    async for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+                            progress.update(len(chunk))
+                    value = fn.types.databytes(f.getvalue())
 
-        await asyncio.to_thread(_dl, filename=filename, headers=headers)
+        self.outputs["data"].value = value
+        if save:
+            self.outputs["file"].value = make_file_info(fullpath, root)
+        else:
+            self.outputs["file"].value = fn.NoValue
 
 
 @dataclass
