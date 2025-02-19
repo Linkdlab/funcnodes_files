@@ -12,7 +12,7 @@ from io import BytesIO
 import shutil
 from asynctoolkit.defaults.http import HTTPTool
 
-__version__ = "0.2.11"
+__version__ = "0.2.12"
 
 
 def path_encoder(obj, preview=False):
