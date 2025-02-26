@@ -4,8 +4,6 @@ import funcnodes as fn
 import os
 from pathlib import Path
 
-fn.config.IN_NODE_TEST = True
-
 
 class TestAllNodes(TestAllNodesBase):
     async def asyncSetUp(self):
@@ -75,7 +73,8 @@ class TestAllNodes(TestAllNodesBase):
 
     async def test_browse_folder(self):
         node = fnmodule.BrowseFolder()
-        self.ns.add_node_instance(node)
+        node = self.ns.add_node_instance(node)
+
         await node
         self.assertIsInstance(node.get_output("dirs").value, list)
         self.assertIsInstance(node.get_output("files").value, list)
@@ -95,7 +94,7 @@ class TestAllNodes(TestAllNodesBase):
         self.assertIsInstance(node.get_output("size").value, int)
         self.assertIsInstance(node.get_output("created").value, float)
         self.assertIsInstance(node.get_output("modified").value, float)
-        self.assertEqual(node.get_output("name").value, "test.txt")
+        self.assertEqual(node.get_output("filename").value, "test.txt")
 
     async def test_pathdict(self):
         node = fnmodule.PathDict()
