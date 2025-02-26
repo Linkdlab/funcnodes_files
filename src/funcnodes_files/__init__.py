@@ -12,7 +12,7 @@ from io import BytesIO
 import shutil
 from asynctoolkit.defaults.http import HTTPTool
 
-__version__ = "0.2.12"
+__version__ = "0.2.13"
 
 
 def path_encoder(obj, preview=False):
@@ -95,6 +95,23 @@ def validate_path(path: Path, root: Path):
     return path
 
 
+def string_to_pathdict(path: str, node: fn.Node, levels=1) -> PathDictData:
+    try:
+        if not isinstance(path, str):
+            return path
+        if not node:
+            return path
+        if not path:
+            return path
+        if node.nodespace is None:
+            return path
+        root = Path(node.nodespace.get_property("files_dir"))
+        fullpath = validate_path(Path(path), root)
+        return make_path_dict(fullpath, root, levels=levels)
+    except Exception:
+        return path
+
+
 class PathDict(fn.Node):
     """
     Seriealizes a path to dict
@@ -102,19 +119,21 @@ class PathDict(fn.Node):
 
     node_id = "files.path_dict"
     node_name = "Path Dict"
-    parent = fn.NodeInput(id="parent", type=Union[str, PathDictData], default=".")
-    path = fn.NodeInput(id="path", type=str, default=".")
-    data = fn.NodeOutput(id="data", type=PathDictData)
+    parent = fn.NodeInput(type=Union[str, PathDictData], default=".", name="Parent")
+    path = fn.NodeInput(type=str, default=".")
+    data = fn.NodeOutput(type=PathDictData)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.get_input("parent").on("after_set_value", self._update_keys)
+        self.on("after_set_nodespace", self._update_keys)
 
     def _update_keys(self, *args, **kwargs):
         try:
             d = self.get_input("parent").value
         except KeyError:
             return
+        d = string_to_pathdict(d, self, levels=1)
         if isinstance(d, PathDictData):
             self.get_input("path").update_value_options(
                 options=funcnodes_core.io.EnumOf(
@@ -154,9 +173,9 @@ class BrowseFolder(fn.Node):
     node_id = "files.browse_folder"
     node_name = "Browse Folder"
 
-    path = fn.NodeInput(id="path", type=Union[str, PathDictData], default="")
-    files = fn.NodeOutput(id="files", type=List[FileInfoData])
-    dirs = fn.NodeOutput(id="dirs", type=List[PathDictData])
+    path = fn.NodeInput(type=Union[str, PathDictData], default=".")
+    files = fn.NodeOutput(type=List[FileInfoData])
+    dirs = fn.NodeOutput(type=List[PathDictData])
 
     async def func(self, path: Union[str, PathDictData]) -> None:
         """
@@ -187,23 +206,25 @@ class OpenFile(fn.Node):
 
     node_id = "files.open_file"
     node_name = "Open File"
-    parent = fn.NodeInput(id="parent", type=Union[str, PathDictData], default=".")
+    parent = fn.NodeInput(type=Union[str, PathDictData], default=".")
     path = fn.NodeInput(
-        id="path",
         type=Union[str, FileInfoData],
     )
 
-    data = fn.NodeOutput(id="data", type=fn.types.databytes)
+    data = fn.NodeOutput(type=fn.types.databytes)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.get_input("parent").on("after_set_value", self._update_keys)
+        self.on("after_set_nodespace", self._update_keys)
 
     def _update_keys(self, *args, **kwargs):
         try:
             d = self.get_input("parent").value
         except KeyError:
             return
+
+        d = string_to_pathdict(d, self, levels=1)
         if isinstance(d, PathDictData):
             self.get_input("path").update_value_options(
                 options=funcnodes_core.io.EnumOf(
@@ -251,25 +272,26 @@ class FileInfo(fn.Node):
 
     node_id = "files.file_info"
     node_name = "File Info"
-    parent = fn.NodeInput(id="parent", type=Union[str, PathDictData], default=".")
+    parent = fn.NodeInput(type=Union[str, PathDictData], default=".")
     path = fn.NodeInput(
-        id="path",
         type=Union[str, FileInfoData],
     )
-    size = fn.NodeOutput(id="size", type=int)
-    modified = fn.NodeOutput(id="modified", type=float)
-    created = fn.NodeOutput(id="created", type=float)
-    name = fn.NodeOutput(id="name", type=str)
+    size = fn.NodeOutput(type=int)
+    modified = fn.NodeOutput(type=float)
+    created = fn.NodeOutput(type=float)
+    filename = fn.NodeOutput(type=str)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.get_input("parent").on("after_set_value", self._update_keys)
+        self.on("after_set_nodespace", self._update_keys)
 
     def _update_keys(self, *args, **kwargs):
         try:
             d = self.get_input("parent").value
         except KeyError:
             return
+        d = string_to_pathdict(d, self, levels=1)
         if isinstance(d, PathDictData):
             self.get_input("path").update_value_options(
                 options=funcnodes_core.io.EnumOf(
@@ -304,7 +326,7 @@ class FileInfo(fn.Node):
         self.outputs["size"].value = os.path.getsize(fullpath)
         self.outputs["modified"].value = os.path.getmtime(fullpath)
         self.outputs["created"].value = os.path.getctime(fullpath)
-        self.outputs["name"].value = fullpath.name
+        self.outputs["filename"].value = fullpath.name
 
 
 class FileUpload(str):
@@ -320,17 +342,16 @@ class FileUploadNode(fn.Node):
     node_name = "File Upload"
 
     parent = fn.NodeInput(
-        id="parent",
         type=Union[str, PathDictData],
         default=".",
         does_trigger=False,
     )
-    input_data = fn.NodeInput(id="input_data", type=FileUpload)
-    load = fn.NodeInput(id="load", type=bool, default=True, does_trigger=False)
-    save = fn.NodeInput(id="save", type=bool, default=False, does_trigger=False)
+    input_data = fn.NodeInput(type=FileUpload)
+    load = fn.NodeInput(type=bool, default=True, does_trigger=False)
+    save = fn.NodeInput(type=bool, default=False, does_trigger=False)
 
-    data = fn.NodeOutput(id="data", type=fn.types.databytes)
-    file = fn.NodeOutput(id="file", type=FileInfoData)
+    data = fn.NodeOutput(type=fn.types.databytes)
+    file = fn.NodeOutput(type=FileInfoData)
 
     async def func(
         self,
@@ -386,14 +407,13 @@ class FolderUploadNode(fn.Node):
     node_name = "Folder Upload"
 
     parent = fn.NodeInput(
-        id="parent",
         type=Union[str, PathDictData],
         default=".",
         does_trigger=False,
     )
-    input_data = fn.NodeInput(id="input_data", type=FolderUpload)
+    input_data = fn.NodeInput(type=FolderUpload, name="Folder")
 
-    dir = fn.NodeOutput(id="dir", type=PathDictData)
+    dir = fn.NodeOutput(type=PathDictData)
 
     async def func(
         self, input_data: FolderUpload, parent: Union[str, PathDictData] = "."
@@ -430,26 +450,23 @@ class FileDownloadNode(fn.Node):
     node_id = "files.dld"
     node_name = "File Download"
 
-    url = fn.NodeInput(id="url", type="str")
+    url = fn.NodeInput(type="str")
     parent = fn.NodeInput(
-        id="parent",
         type=Union[str, PathDictData],
         default=".",
         does_trigger=False,
     )
-    load = fn.NodeInput(id="load", type=bool, default=True, does_trigger=False)
-    save = fn.NodeInput(id="save", type=bool, default=False, does_trigger=False)
-    filename = fn.NodeInput(
-        id="filename", type=Optional[str], default=None, does_trigger=False
-    )
+    load = fn.NodeInput(type=bool, default=True, does_trigger=False)
+    save = fn.NodeInput(type=bool, default=False, does_trigger=False)
+    filename = fn.NodeInput(type=Optional[str], default=None, does_trigger=False)
 
-    data = fn.NodeOutput(id="data", type=fn.types.databytes)
-    file = fn.NodeOutput(id="file", type=FileInfoData)
+    data = fn.NodeOutput(type=fn.types.databytes)
+    file = fn.NodeOutput(type=FileInfoData)
 
     user_agent = fn.NodeInput(
-        id="user_agent", type=str, default=_DEFAULT_USER_AGENT, hidden=True
+        type=str, default=_DEFAULT_USER_AGENT, hidden=True, name="User Agent"
     )
-    headers = fn.NodeInput(id="headers", type=Optional[dict], default=None, hidden=True)
+    headers = fn.NodeInput(type=Optional[dict], default=None, hidden=True)
     default_trigger_on_create = False
 
     async def func(
@@ -576,9 +593,9 @@ class FileDownloadLocal(fn.Node):
     node_id = "files.dld_local"
     node_name = "File Download Local"
 
-    output_data = fn.NodeOutput(id="output_data", type=FileDownload)
-    data = fn.NodeInput(id="data", type=Union[fn.types.databytes, FileInfoData])
-    filename = fn.NodeInput(id="filename", type=Optional[str], default=None)
+    output_data = fn.NodeOutput(type=FileDownload)
+    data = fn.NodeInput(type=Union[fn.types.databytes, FileInfoData])
+    filename = fn.NodeInput(type=Optional[str], default=None)
 
     async def func(
         self, data: Union[fn.types.databytes, FileInfoData], filename: str = None
@@ -618,7 +635,6 @@ class FileDeleteNode(fn.Node):
     node_name = "Delete File"
 
     data = fn.NodeInput(
-        id="data",
         type=Union[PathDictData, FileInfoData],
         does_trigger=False,
     )
@@ -654,11 +670,9 @@ class SaveFile(fn.Node):
     node_id = "files.save"
     node_name = "Save File"
 
-    data = fn.NodeInput(id="data", type=fn.types.databytes)
-    filename = fn.NodeInput(id="filename", type=str)
-    path = fn.NodeInput(
-        id="path", type=Optional[Union[str, PathDictData]], default=None
-    )
+    data = fn.NodeInput(type=fn.types.databytes)
+    filename = fn.NodeInput(type=str)
+    path = fn.NodeInput(type=Optional[Union[str, PathDictData]], default=None)
 
     async def func(
         self,
