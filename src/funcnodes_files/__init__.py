@@ -374,9 +374,13 @@ class FileUploadNode(fn.Node):
         if self.nodespace is None:
             raise Exception("Node not in a nodespace")
 
+        if isinstance(
+            input_data, list
+        ):  # input data could be a list if it comes from a folder like upload
+            input_data = input_data[0]
+
         root = Path(self.nodespace.get_property("files_dir"))
         fp = validate_path(Path(input_data), root)
-        print("XXX", load, save, fp)
         if fp is None or not os.path.exists(fp):
             raise Exception(f"File not found: {input_data}")
 
