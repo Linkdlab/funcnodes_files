@@ -86,7 +86,7 @@ const renderpluginfactory = ({
       fnrf_zst.worker?.set_io_value({
         nid: io.node,
         ioid: io.id,
-        value: resp,
+        value: resp?.[0],
         set_default: true,
       });
     };
