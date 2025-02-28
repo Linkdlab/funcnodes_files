@@ -1,10 +1,11 @@
 """Frontend for working with data"""
 
+from __future__ import annotations
 import funcnodes as fn
 import os
 import base64
 from dataclasses import dataclass
-from typing import List, Union, Optional
+from typing import List, Union, Optional, TYPE_CHECKING
 import funcnodes_core
 from pathlib import Path
 from urllib.parse import unquote
@@ -12,7 +13,11 @@ from io import BytesIO
 import shutil
 from asynctoolkit.defaults.http import HTTPTool
 
-__version__ = "0.2.13"
+if TYPE_CHECKING:
+    from funcnodes_react_flow import ReactPlugin
+
+
+__version__ = "0.2.15"
 
 
 def path_encoder(obj, preview=False):
@@ -724,6 +729,8 @@ NODE_SHELF = fn.Shelf(
 )
 
 
-REACT_PLUGIN = {
-    "module": os.path.join(os.path.dirname(__file__), "react_plugin", "js", "main.js"),
+REACT_PLUGIN: ReactPlugin = {
+    "js": [os.path.join(os.path.dirname(__file__), "react_plugin", "js", "main.js")],
+    "css": [],
+    "module": "funcnodes_files",
 }
