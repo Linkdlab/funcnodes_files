@@ -1,6 +1,6 @@
 [project]
 name = "funcnodes-files"
-version = "0.2.14"
+version = "0.2.15"
 description = "A package for managing file downloads, uploads, and folder handling within FuncNodes workflows."
 readme = "README.md"
 classifiers = [ "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",]
@@ -39,14 +39,10 @@ download = "https://pypi.org/project/funcnodes-files/#files"
 [project.entry-points."funcnodes.module"]
 module = "funcnodes_files"
 shelf = "funcnodes_files:NODE_SHELF"
+react_plugin = "funcnodes_files:REACT_PLUGIN"
 
 [tool.setuptools.package-dir]
 "" = "src"
 
 [tool.setuptools.packages.find]
 where = [ "src",]
-
-# [tool.poetry.group.dev.dependencies]
-# pre-commit = "*"
-# pytest = "*"
-# funcnodes-module = "^0.1.20"
