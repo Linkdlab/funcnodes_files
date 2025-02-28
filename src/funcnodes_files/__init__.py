@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from funcnodes_react_flow import ReactPlugin
 
 
-__version__ = "0.2.15"
+__version__ = "0.2.16"
 
 
 def path_encoder(obj, preview=False):
@@ -730,7 +730,7 @@ NODE_SHELF = fn.Shelf(
 
 
 REACT_PLUGIN: ReactPlugin = {
-    "js": [os.path.join(os.path.dirname(__file__), "react_plugin", "js", "main.js")],
+    "js": [],
     "css": [],
-    "module": "funcnodes_files",
+    "module": os.path.join(os.path.dirname(__file__), "react_plugin", "js", "main.js"),
 }

@@ -377,7 +377,7 @@ wheels = [
 
 [[package]]
 name = "funcnodes-files"
-version = "0.2.15"
+version = "0.2.16"
 source = { editable = "." }
 dependencies = [
     { name = "asynctoolkit" },
@@ -425,16 +425,16 @@ wheels = [
 
 [[package]]
 name = "funcnodes-react-flow"
-version = "0.3.14"
+version = "0.3.15"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "funcnodes", marker = "sys_platform != 'emscripten'" },
     { name = "funcnodes-core" },
     { name = "funcnodes-worker" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/45/71/623aac218b45043a2fd54f6ae8c26bc4ad5373d4e53cd284e6f6f2e676d8/funcnodes_react_flow-0.3.14.tar.gz", hash = "sha256:d334aa5ea1b0076acbf9e63825d00fd3c04708b0bab38c3bef0c58096a302d95", size = 2066644 }
+sdist = { url = "https://files.pythonhosted.org/packages/53/cc/b1b474f0865a306f18354bfaf3336c4bf1d74d6311ec309cabeb07bb7149/funcnodes_react_flow-0.3.15.tar.gz", hash = "sha256:70f4d5987ab7f1d21454dd36c5eb42ba1f9ff1a5035aa84295035c058a7d6b3d", size = 2066655 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cc/a3/31219e422b369c3d8bc4d2f119572679654945b34533edfb9b3d5d5017b1/funcnodes_react_flow-0.3.14-py3-none-any.whl", hash = "sha256:3f870592528b778f14671a016f13466bfd63064f81e072a958c913ce1c6480b5", size = 2078811 },
+    { url = "https://files.pythonhosted.org/packages/84/2d/7673df355add201a8ab1bfec3528a4715683a31346e96d61f34844b6468a/funcnodes_react_flow-0.3.15-py3-none-any.whl", hash = "sha256:bd1a66e2826490fba86093fbcccee9833d2c2ee29bb8c85a5c0c0c489e0f1233", size = 2078834 },
 ]
 
 [[package]]
