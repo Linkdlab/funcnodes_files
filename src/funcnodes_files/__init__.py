@@ -1,12 +1,11 @@
 """Frontend for working with data"""
 
 from __future__ import annotations
-import funcnodes as fn
 import os
 import base64
 from dataclasses import dataclass
 from typing import List, Union, Optional, TYPE_CHECKING
-import funcnodes_core
+import funcnodes_core as fn
 from pathlib import Path
 from urllib.parse import unquote
 from io import BytesIO
@@ -17,7 +16,7 @@ if TYPE_CHECKING:
     from funcnodes_react_flow import ReactPlugin
 
 
-__version__ = "0.2.16"
+__version__ = "0.2.17"
 
 
 def path_encoder(obj, preview=False):
@@ -95,6 +94,7 @@ def validate_path(path: Path, root: Path):
         path = (root / path).resolve()
     # check if path is in root
     if not path.is_relative_to(root):
+        fn.FUNCNODES_LOGGER.debug("Path is not in root: %s %s", path, root)
         raise Exception("Path is not in root")
 
     return path
@@ -141,7 +141,7 @@ class PathDict(fn.Node):
         d = string_to_pathdict(d, self, levels=1)
         if isinstance(d, PathDictData):
             self.get_input("path").update_value_options(
-                options=funcnodes_core.io.EnumOf(
+                options=fn.io.EnumOf(
                     type="enum",
                     values=[sub.path for sub in d.dirs],
                     keys=[sub.name for sub in d.dirs],
@@ -232,7 +232,7 @@ class OpenFile(fn.Node):
         d = string_to_pathdict(d, self, levels=1)
         if isinstance(d, PathDictData):
             self.get_input("path").update_value_options(
-                options=funcnodes_core.io.EnumOf(
+                options=fn.io.EnumOf(
                     type="enum",
                     values=[sub.path for sub in d.files],
                     keys=[sub.name for sub in d.files],
@@ -299,7 +299,7 @@ class FileInfo(fn.Node):
         d = string_to_pathdict(d, self, levels=1)
         if isinstance(d, PathDictData):
             self.get_input("path").update_value_options(
-                options=funcnodes_core.io.EnumOf(
+                options=fn.io.EnumOf(
                     type="enum",
                     values=[sub.path for sub in d.files],
                     keys=[sub.name for sub in d.files],
