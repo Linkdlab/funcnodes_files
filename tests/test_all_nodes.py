@@ -22,7 +22,9 @@ class TestAllNodes(TestAllNodesBase):
 
     async def test_file_download(self):
         node = fnmodule.FileDownloadNode()
-        node.inputs["url"].value = "https://www.google.com"
+        node.inputs[
+            "url"
+        ].value = "https://upload.wikimedia.org/wikipedia/commons/2/2b/Cyborglog-of-eating-old-apple-d360.jpg"
         await node
         self.assertIsInstance(node.get_output("data").value, bytes)
 

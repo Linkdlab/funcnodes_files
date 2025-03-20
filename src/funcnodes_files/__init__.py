@@ -533,6 +533,10 @@ class FileDownloadNode(fn.Node):
                     filename = unquote(url.split("/")[-1])
 
             total_size = headers.get("Content-Length", 0) or None
+            try:
+                total_size = int(total_size)
+            except ValueError:
+                total_size = None
             value = fn.NoValue
 
             if save:
