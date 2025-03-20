@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from funcnodes_react_flow import ReactPlugin
 
 
-__version__ = "0.2.17"
+__version__ = "0.2.18"
 
 
 def path_encoder(obj, preview=False):
@@ -533,6 +533,10 @@ class FileDownloadNode(fn.Node):
                     filename = unquote(url.split("/")[-1])
 
             total_size = headers.get("Content-Length", 0) or None
+            try:
+                total_size = int(total_size)
+            except ValueError:
+                total_size = None
             value = fn.NoValue
 
             if save:
