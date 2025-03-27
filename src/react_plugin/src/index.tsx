@@ -1,19 +1,4 @@
-import {
-  // IOType,
-  RendererPlugin,
-  FuncNodesReactPlugin,
-  RenderPluginFactoryProps,
-  // FuncNodesContext,
-  // FuncNodesReactFlowZustandInterface,
-  InputRendererProps,
-  OutputRendererProps,
-} from "@linkdlab/funcnodes_react_flow";
-
-// type FileUploadProps = {
-//   filename: string;
-//   content: string;
-//   path: string;
-// };
+import { v1_types as pluginversion } from "@linkdlab/funcnodes_react_flow";
 
 type FileDownloadProps = {
   filename: string;
@@ -23,9 +8,11 @@ type FileDownloadProps = {
 const renderpluginfactory = ({
   React,
   fnrf_zst,
-}: RenderPluginFactoryProps): RendererPlugin => {
-  const FileInput = ({ io }: InputRendererProps) => {
+  NodeContext,
+}: pluginversion.RenderPluginFactoryProps): pluginversion.RendererPlugin => {
+  const FileInput = ({ iostore }: pluginversion.InputRendererProps) => {
     const fileInput = React.useRef<HTMLInputElement>(null);
+    const io = iostore.use();
     const setProgress = (
       p: number,
       total: number | undefined,
@@ -48,34 +35,34 @@ const renderpluginfactory = ({
         from_remote: true,
       });
     };
+    const nodecontext = React.useContext(NodeContext);
 
     const on_change = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (!files || files.length === 0) return;
-      const nodestore = fnrf_zst.nodespace.get_node(io.node);
-      if (!nodestore) return;
-      let node = nodestore.getState();
-      let parent_io = node.io["parent"];
-      if (!parent_io) return;
+      if (!nodecontext) return;
+      const node = nodecontext.node_data;
+      const parent_io_store = node.io["parent"];
+      if (!parent_io_store) return;
+      const parent_io = parent_io_store.getState();
       let parentpath = undefined;
       for (let i = 0; i < 10; i++) {
-        if (parent_io.fullvalue) {
-          parentpath = parent_io.fullvalue.path;
-          break;
-        }
+        try {
+          if (parent_io_store.valuestore.getState().full) {
+            parentpath = parent_io_store.valuestore.getState().full?.value.path;
+            break;
+          }
+        } catch (e) {}
         if (parent_io.try_get_full_value === undefined) {
           break;
         }
         parent_io.try_get_full_value();
         await new Promise((resolve) => setTimeout(resolve, 500));
-        node = nodestore.getState();
-        parent_io = node.io["parent"];
-        if (!parent_io) break;
       }
 
       const start = new Date().getTime();
 
-      const resp: string[] | undefined = await fnrf_zst.worker?.upload_file({
+      const resp: string | undefined = await fnrf_zst.worker?.upload_file({
         files: files,
         onProgressCallback: (loaded: number, total?: number) => {
           setProgress(loaded, total, start);
@@ -86,7 +73,7 @@ const renderpluginfactory = ({
       fnrf_zst.worker?.set_io_value({
         nid: io.node,
         ioid: io.id,
-        value: resp?.[0],
+        value: resp,
         set_default: true,
       });
     };
@@ -115,9 +102,10 @@ const renderpluginfactory = ({
     );
   };
 
-  const FolderInput = ({ io }: InputRendererProps) => {
+  const FolderInput = ({ iostore }: pluginversion.InputRendererProps) => {
     const fileInput = React.useRef<HTMLInputElement>(null);
-
+    const nodecontext = React.useContext(NodeContext);
+    const io = iostore.use();
     const setProgress = (
       p: number,
       total: number | undefined,
@@ -143,30 +131,30 @@ const renderpluginfactory = ({
     const on_change = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (!files || files.length === 0) return;
-      const nodestore = fnrf_zst.nodespace.get_node(io.node);
-      if (!nodestore) return;
-      let node = nodestore.getState();
-      let parent_io = node.io["parent"];
-      if (!parent_io) return;
+      if (!nodecontext) return;
+      const node = nodecontext.node_data;
+      const parent_io_store = node.io["parent"];
+      if (!parent_io_store) return;
+
       let parentpath = undefined;
+      const parentio = parent_io_store.getState();
       for (let i = 0; i < 10; i++) {
-        if (parent_io.fullvalue) {
-          parentpath = parent_io.fullvalue.path;
+        try {
+          if (parent_io_store.valuestore.getState().full) {
+            parentpath = parent_io_store.valuestore.getState().full?.value.path;
+            break;
+          }
+        } catch (e) {}
+        if (parentio.try_get_full_value === undefined) {
           break;
         }
-        if (parent_io.try_get_full_value === undefined) {
-          break;
-        }
-        parent_io.try_get_full_value();
+        parentio.try_get_full_value();
         await new Promise((resolve) => setTimeout(resolve, 500));
-        node = nodestore.getState();
-        parent_io = node.io["parent"];
-        if (!parent_io) break;
       }
 
       const start = new Date().getTime();
 
-      const resp: string[] | undefined = await fnrf_zst.worker?.upload_file({
+      const resp: string | undefined = await fnrf_zst.worker?.upload_file({
         files: files,
         onProgressCallback: (loaded: number, total?: number) => {
           setProgress(loaded, total, start);
@@ -207,9 +195,9 @@ const renderpluginfactory = ({
     );
   };
 
-  const FileDownload = ({ io }: OutputRendererProps) => {
+  const FileDownload = ({ iostore }: pluginversion.OutputRendererProps) => {
     const fileDownload = React.useRef<HTMLAnchorElement>(null);
-
+    const io = iostore.use();
     const download = async () => {
       const fullvalue = await fnrf_zst.worker?.get_io_full_value({
         nid: io.node,
@@ -258,8 +246,9 @@ const renderpluginfactory = ({
   };
 };
 
-const Plugin: FuncNodesReactPlugin = {
+const Plugin: pluginversion.FuncNodesReactPlugin = {
   renderpluginfactory: renderpluginfactory,
+  v: "1",
 };
 
 export default Plugin;

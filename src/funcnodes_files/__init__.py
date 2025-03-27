@@ -183,13 +183,6 @@ class BrowseFolder(fn.Node):
     dirs = fn.NodeOutput(type=List[PathDictData])
 
     async def func(self, path: Union[str, PathDictData]) -> None:
-        """
-        Uploads a file to a given URL.
-
-        Args:
-          url (str): The URL to upload the file to.
-          file (str): The path to the file to upload.
-        """
         if self.nodespace is None:
             raise Exception("Node not in a nodespace")
         root = Path(self.nodespace.get_property("files_dir"))
@@ -247,13 +240,6 @@ class OpenFile(fn.Node):
         path: Union[str, FileInfoData],
         parent: Union[str, PathDictData] = ".",
     ) -> None:
-        """
-        Uploads a file to a given URL.
-
-        Args:
-          url (str): The URL to upload the file to.
-          file (str): The path to the file to upload.
-        """
         if self.nodespace is None:
             raise Exception("Node not in a nodespace")
         root = Path(self.nodespace.get_property("files_dir"))
