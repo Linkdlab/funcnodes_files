@@ -9,11 +9,12 @@
     "dist"
   ],
   "scripts": {
-    "build": "webpack build",
-    "test": "mocha"
+    "test": "mocha",
+    "build": "webpack build --mode production",
+    "watch": "webpack watch --mode development"
   },
   "dependencies": {
-    "@linkdlab/funcnodes_react_flow": ">=0.3.9",
+    "@linkdlab/funcnodes_react_flow": ">=0.4.0",
     "typescript": "^5.4.5"
   },
   "devDependencies": {
