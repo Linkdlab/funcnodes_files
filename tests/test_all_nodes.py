@@ -1,12 +1,14 @@
 from all_nodes_test_base import TestAllNodesBase
 import funcnodes_files as fnmodule
 import funcnodes as fn
+from funcnodes_core.testing import setup
 import os
 from pathlib import Path
 
 
 class TestAllNodes(TestAllNodesBase):
     async def asyncSetUp(self):
+        setup()
         await super().asyncSetUp()
         self.ns = fn.NodeSpace()
         self.root = Path(os.path.join(os.path.dirname(__file__), "files"))
@@ -87,6 +89,7 @@ class TestAllNodes(TestAllNodesBase):
         node.inputs["path"].value = self.reltestfilepath.as_posix()
         await node
         self.assertIsInstance(node.get_output("data").value, bytes)
+        self.assertEqual(node.get_output("data").value.fileinfo.name, "test.txt")
 
     async def test_fileinfo(self):
         node = fnmodule.FileInfo()

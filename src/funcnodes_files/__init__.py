@@ -48,6 +48,17 @@ class PathDictData:
     name: str
 
 
+class FileDataBytes(fn.types.databytes):
+    """
+    Custom data type for file data.
+    """
+
+    def __new__(cls, *args, fileinfo: FileInfoData, **kwargs):
+        self = super().__new__(cls, *args, **kwargs)
+        self.fileinfo = fileinfo
+        return self
+
+
 def make_file_info(fullpath: Path, root: Path) -> FileInfoData:
     return FileInfoData(
         name=fullpath.name,
@@ -209,7 +220,7 @@ class OpenFile(fn.Node):
         type=Union[str, FileInfoData],
     )
 
-    data = fn.NodeOutput(type=fn.types.databytes)
+    data = fn.NodeOutput(type=FileDataBytes)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -253,7 +264,7 @@ class OpenFile(fn.Node):
 
         fullpath = validate_path(path.path, root)
         with open(fullpath, "rb") as file:
-            self.outputs["data"].value = fn.types.databytes(file.read())
+            self.outputs["data"].value = FileDataBytes(file.read(), fileinfo=path)
 
 
 class FileInfo(fn.Node):
@@ -341,7 +352,7 @@ class FileUploadNode(fn.Node):
     load = fn.NodeInput(type=bool, default=True, does_trigger=False)
     save = fn.NodeInput(type=bool, default=False, does_trigger=False)
 
-    data = fn.NodeOutput(type=fn.types.databytes)
+    data = fn.NodeOutput(type=FileDataBytes)
     file = fn.NodeOutput(type=FileInfoData)
 
     async def func(
@@ -375,10 +386,11 @@ class FileUploadNode(fn.Node):
         if fp is None or not os.path.exists(fp):
             raise Exception(f"File not found: {input_data}")
 
+        fileinfo = make_file_info(fp, root)
         if load:
             with open(fp, "rb") as file:
                 filedata = file.read()
-            self.outputs["data"].value = fn.types.databytes(filedata)
+            self.outputs["data"].value = FileDataBytes(filedata, fileinfo=fileinfo)
         else:
             self.outputs["data"].value = fn.NoValue
 
@@ -386,7 +398,7 @@ class FileUploadNode(fn.Node):
             os.remove(fp)
             self.outputs["file"].value = fn.NoValue
         else:
-            self.outputs["file"].value = make_file_info(fp, root)
+            self.outputs["file"].value = fileinfo
 
 
 class FolderUpload(str):
@@ -455,7 +467,7 @@ class FileDownloadNode(fn.Node):
     save = fn.NodeInput(type=bool, default=False, does_trigger=False)
     filename = fn.NodeInput(type=Optional[str], default=None, does_trigger=False)
 
-    data = fn.NodeOutput(type=fn.types.databytes)
+    data = fn.NodeOutput(type=FileDataBytes)
     file = fn.NodeOutput(type=FileInfoData)
 
     user_agent = fn.NodeInput(
@@ -524,7 +536,7 @@ class FileDownloadNode(fn.Node):
             except ValueError:
                 total_size = None
             value = fn.NoValue
-
+            fileinfo = fn.NoValue
             if save:
                 fullpath = path / filename
                 with (
@@ -541,9 +553,11 @@ class FileDownloadNode(fn.Node):
                         if chunk:
                             f.write(chunk)
                             progress.update(len(chunk))
+
+                fileinfo = make_file_info(fullpath, root)
                 if load:
                     with open(fullpath, "rb") as f:
-                        value = fn.types.databytes(f.read())
+                        value = FileDataBytes(f.read(), fileinfo=fileinfo)
             else:
                 with (
                     BytesIO() as f,
@@ -562,10 +576,7 @@ class FileDownloadNode(fn.Node):
                     value = fn.types.databytes(f.getvalue())
 
         self.outputs["data"].value = value
-        if save:
-            self.outputs["file"].value = make_file_info(fullpath, root)
-        else:
-            self.outputs["file"].value = fn.NoValue
+        self.outputs["file"].value = fileinfo
 
 
 @dataclass
@@ -593,11 +604,13 @@ class FileDownloadLocal(fn.Node):
     node_name = "File Download Local"
 
     output_data = fn.NodeOutput(type=FileDownload)
-    data = fn.NodeInput(type=Union[fn.types.databytes, FileInfoData])
+    data = fn.NodeInput(type=Union[fn.types.databytes, FileDataBytes, FileInfoData])
     filename = fn.NodeInput(type=Optional[str], default=None)
 
     async def func(
-        self, data: Union[fn.types.databytes, FileInfoData], filename: str = None
+        self,
+        data: Union[fn.types.databytes, FileDataBytes, FileInfoData],
+        filename: str = None,
     ) -> None:
         """
         Downloads a file from a given URL and sets the "data" output to the file's content as bytes.
@@ -615,7 +628,9 @@ class FileDownloadLocal(fn.Node):
                 filename = data.name
             with open(fullpath, "rb") as file:
                 data = file.read()
-
+        elif isinstance(data, FileDataBytes):
+            if filename is None:
+                filename = data.fileinfo.name
         if filename is None:
             raise Exception("Filename must be provided if the data is passed as bytes")
 
@@ -669,13 +684,13 @@ class SaveFile(fn.Node):
     node_id = "files.save"
     node_name = "Save File"
 
-    data = fn.NodeInput(type=fn.types.databytes)
+    data = fn.NodeInput(type=Union[fn.types.databytes, FileDataBytes])
     filename = fn.NodeInput(type=str)
     path = fn.NodeInput(type=Optional[Union[str, PathDictData]], default=None)
 
     async def func(
         self,
-        data: fn.types.databytes,
+        data: Union[fn.types.databytes, FileDataBytes],
         filename: str,
         path: Optional[Union[str, PathDictData]] = None,
     ) -> None:
