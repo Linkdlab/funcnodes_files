@@ -1,6 +1,6 @@
 [project]
 name = "funcnodes-files"
-version = "0.2.19"
+version = "0.3.0"
 description = "A package for managing file downloads, uploads, and folder handling within FuncNodes workflows."
 readme = "README.md"
 classifiers = [ "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",]
@@ -22,6 +22,7 @@ dev = [
  "funcnodes-module>=0.2.8",
  "pre-commit>=4.1.0",
  "pytest>=8.3.4",
+ "pytest-funcnodes>=0.1.0",
 ]
 
 [build-system]
@@ -47,3 +48,11 @@ react_plugin = "funcnodes_files:REACT_PLUGIN"
 
 [tool.setuptools.packages.find]
 where = [ "src",]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "pep440"
+version_provider = "uv"
+update_changelog_on_bump = true
+major_version_zero = true
