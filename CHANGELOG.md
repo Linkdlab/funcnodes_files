@@ -1,3 +1,9 @@
+## v0.4.1 (2025-06-06)
+
+### Refactor
+
+- **file**: ♻️ change path type to string for better compatibility
+
 ## v0.4.0 (2025-06-06)
 
 ### Feat
