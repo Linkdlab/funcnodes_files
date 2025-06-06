@@ -1,3 +1,9 @@
+## v0.4.0 (2025-06-06)
+
+### Feat
+
+- **file**: ✨ add `fileinfo` attribute to `FileDataBytes` class
+
 ## v0.3.0 (2025-06-05)
 
 ### Feat
