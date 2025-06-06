@@ -53,6 +53,8 @@ class FileDataBytes(fn.types.databytes):
     Custom data type for file data.
     """
 
+    fileinfo: FileInfoData
+
     def __new__(cls, *args, fileinfo: FileInfoData, **kwargs):
         self = super().__new__(cls, *args, **kwargs)
         self.fileinfo = fileinfo
