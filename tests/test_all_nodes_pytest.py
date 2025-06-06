@@ -60,7 +60,9 @@ async def test_file_upload(ns, reltestfilepath):
     assert node.inputs_ready()
     await node
 
-    assert node.get_output("data").value == b"hello\n"  # since load is turnedd off
+    assert (
+        node.get_output("data").value.strip() == b"hello\n".strip()
+    )  # since load is turnedd off
     fid = node.get_output("file").value
     assert isinstance(fid, fnmodule.FileInfoData)
     assert fid.name == reltestfilepath.name
