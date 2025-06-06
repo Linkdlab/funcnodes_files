@@ -42,7 +42,7 @@ class FileInfoData:
 
 @dataclass
 class PathDictData:
-    path: Path
+    path: str
     files: List[FileInfoData]
     dirs: List["PathDictData"]
     name: str
@@ -61,17 +61,24 @@ class FileDataBytes(fn.types.databytes):
         return self
 
 
-def make_file_info(fullpath: Path, root: Path) -> FileInfoData:
+def make_file_info(fullpath: Union[Path, str], root: Union[Path, str]) -> FileInfoData:
+    fullpath = Path(fullpath)
+    root = Path(root)
     return FileInfoData(
         name=fullpath.name,
-        path=fullpath.relative_to(root),
+        path=fullpath.relative_to(root).as_posix(),
         size=os.path.getsize(fullpath),
         modified=os.path.getmtime(fullpath),
         created=os.path.getctime(fullpath),
     )
 
 
-def make_path_dict(fullpath: Path, root: Path, levels=999) -> PathDictData:
+def make_path_dict(
+    fullpath: Union[Path, str], root: Union[Path, str], levels=999
+) -> PathDictData:
+    fullpath = Path(fullpath)
+    root = Path(root)
+
     def _recurisive_fill(
         path: Path,
         _levels: int,
@@ -93,7 +100,7 @@ def make_path_dict(fullpath: Path, root: Path, levels=999) -> PathDictData:
                     )
         relpath = path.relative_to(root)
         return PathDictData(
-            path=relpath,
+            path=relpath.as_posix(),
             files=files,
             dirs=dirs,
             name=relpath.name,
@@ -102,7 +109,9 @@ def make_path_dict(fullpath: Path, root: Path, levels=999) -> PathDictData:
     return _recurisive_fill(fullpath, _levels=levels)
 
 
-def validate_path(path: Path, root: Path):
+def validate_path(path: Union[Path, str], root: Union[Path, str]):
+    root = Path(root)
+    path = Path(path)
     if not path.is_absolute():
         path = (root / path).resolve()
     # check if path is in root
@@ -176,7 +185,7 @@ class PathDict(fn.Node):
             self.outputs["data"].value = parent
             return
         if parent:
-            path = parent.path / path
+            path = Path(parent.path) / path
         targetpath = Path(path)
         fullpath = validate_path(targetpath, root)
 
@@ -260,7 +269,7 @@ class OpenFile(fn.Node):
             parent = make_path_dict(validate_path(Path(parent), root), root, levels=1)
         if isinstance(path, str):
             if parent:
-                path = parent.path / path
+                path = Path(parent.path) / path
             fullpath = validate_path(Path(path), root)
             path = make_file_info(fullpath, root)
 
@@ -322,7 +331,7 @@ class FileInfo(fn.Node):
 
         if isinstance(path, str):
             if parent:
-                path = parent.path / path
+                path = Path(parent.path) / path
             fullpath = validate_path(Path(path), root)
             path = make_file_info(fullpath, root)
 
