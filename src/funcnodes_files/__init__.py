@@ -165,7 +165,7 @@ class PathDict(fn.Node):
             self.get_input("path").update_value_options(
                 options=fn.io.EnumOf(
                     type="enum",
-                    values=[sub.path for sub in d.dirs],
+                    values=[sub.name for sub in d.dirs],
                     keys=[sub.name for sub in d.dirs],
                     nullable=False,
                 )
@@ -249,7 +249,7 @@ class OpenFile(fn.Node):
             self.get_input("path").update_value_options(
                 options=fn.io.EnumOf(
                     type="enum",
-                    values=[sub.path for sub in d.files],
+                    values=[sub.name for sub in d.files],
                     keys=[sub.name for sub in d.files],
                     nullable=False,
                 )
@@ -309,7 +309,7 @@ class FileInfo(fn.Node):
             self.get_input("path").update_value_options(
                 options=fn.io.EnumOf(
                     type="enum",
-                    values=[sub.path for sub in d.files],
+                    values=[sub.name for sub in d.files],
                     keys=[sub.name for sub in d.files],
                     nullable=False,
                 )

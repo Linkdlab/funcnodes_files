@@ -167,3 +167,38 @@ async def test_save_file(ns, root):
     assert (root / "savetest" / "test_save.txt").exists()
     os.remove(root / "savetest" / "test_save.txt")
     os.rmdir(root / "savetest")
+
+
+@nodetest(fnmodule.BrowseFolder)
+async def test_browse_folder_with_path(ns, root):
+    node = fnmodule.BrowseFolder()
+    ns.add_node_instance(node)
+    node.inputs["path"].value = root.as_posix()
+    await node
+    assert isinstance(node.get_output("dirs").value, list)
+    assert isinstance(node.get_output("files").value, list)
+    assert len(node.get_output("dirs").value) == 1
+    assert len(node.get_output("files").value) == 1
+
+    path_dict_a = fnmodule.PathDict()
+    ns.add_node_instance(path_dict_a)
+    await path_dict_a
+    print(path_dict_a.inputs["path"].value_options["options"])
+    assert path_dict_a.inputs["path"].value_options["options"]["values"] == ["a"]
+    path_dict_a.inputs["path"].value = "a"
+    await path_dict_a
+    assert isinstance(path_dict_a.get_output("data").value, fnmodule.PathDictData)
+    assert len(path_dict_a.get_output("data").value.dirs) == 1
+    assert path_dict_a.get_output("data").value.dirs[0].name == "b"
+
+    path_dict_b = fnmodule.PathDict()
+    ns.add_node_instance(path_dict_b)
+    path_dict_b.inputs["parent"].connect(path_dict_a.get_output("data"))
+    await path_dict_b
+    assert path_dict_b.inputs["path"].value_options["options"]["values"] == ["b"]
+    path_dict_b.inputs["path"].value = "b"
+    await path_dict_b
+
+    assert isinstance(path_dict_b.get_output("data").value, fnmodule.PathDictData)
+    assert len(path_dict_b.get_output("data").value.files) == 1
+    assert path_dict_b.get_output("data").value.files[0].name == "c.txt"
