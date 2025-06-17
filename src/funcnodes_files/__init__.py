@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from funcnodes_react_flow import ReactPlugin
 
 
-__version__ = "0.2.18"
+__version__ = "0.5.0"
 
 
 def path_encoder(obj, preview=False):
