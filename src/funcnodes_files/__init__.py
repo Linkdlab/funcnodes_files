@@ -593,11 +593,11 @@ class FileDownloadNode(fn.Node):
 @dataclass
 class FileDownload:
     filename: str
-    content: str
+    bytedata: bytes
 
     @property
-    def bytedata(self):
-        return fn.types.databytes(base64.b64decode(self.content))
+    def content(self):
+        return base64.b64encode(self.bytedata).decode("utf-8")
 
     def __str__(self) -> str:
         return f"FileDownload(filename={self.filename})"
@@ -605,6 +605,26 @@ class FileDownload:
     def __repr__(self) -> str:
         return self.__str__()
 
+def file_download_json_handler(obj, preview=False):
+    """
+    Encodes dataclasses to dictionaries.
+    """
+    if isinstance(obj, FileDownload):
+        return fn.Encdata(data=obj.filename, handeled=True,done=True)
+    return fn.Encdata(data=obj, handeled=False)
+
+
+fn.JSONEncoder.add_encoder(file_download_json_handler,enc_cls=[FileDownload])
+
+def file_download_byte_handler(obj, preview=False):
+    """
+    Encodes dataclasses to dictionaries.
+    """
+    if isinstance(obj, FileDownload):
+        return fn.BytesEncdata(data=obj.bytedata, handeled=True,mime="application/octet-stream")
+    return fn.BytesEncdata(data=obj, handeled=False)
+
+fn.ByteEncoder.add_encoder(file_download_byte_handler,enc_cls=[FileDownload])
 
 class FileDownloadLocal(fn.Node):
     """
@@ -647,7 +667,7 @@ class FileDownloadLocal(fn.Node):
 
         self.outputs["output_data"].value = FileDownload(
             filename=filename,
-            content=base64.b64encode(data).decode("utf-8"),
+            bytedata=data,
         )
 
 
