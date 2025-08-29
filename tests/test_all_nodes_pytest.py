@@ -88,7 +88,7 @@ async def test_folder_upload(ns, testfile):
 @nodetest(fnmodule.FileDownloadLocal)
 async def test_file_download_local():
     node = fnmodule.FileDownloadLocal()
-    data = fnmodule.FileDownload(filename="test.txt", content="AAAA")
+    data = fnmodule.FileDownload(filename="test.txt", bytedata=b"AAAA")
     node.inputs["data"].value = data.bytedata
     node.inputs["filename"].value = data.filename
     await node
