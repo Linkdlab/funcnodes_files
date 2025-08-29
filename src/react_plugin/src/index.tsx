@@ -1,26 +1,46 @@
-import { v1_types as pluginversion } from "@linkdlab/funcnodes_react_flow";
+import * as React from "react";
+import {
+  FuncNodesReactPlugin,
+  LATEST_VERSION,
+  NodeHooksType,
+  RenderPluginFactoryProps,
+  RendererPlugin,
+  NodeHooksProps,
+  useIOStore,
+  useSetIOValueOptions,
+  useIOValueStore,
+  InputRendererProps,
+  OutputRendererProps,
+  useWorkerApi,
+  useSetIOValue,
+  useFuncNodesContext,
+  useIOGetFullValue,
+} from "@linkdlab/funcnodes_react_flow_plugin";
+import { ArrayBufferDataStructure } from "../../../../../frontend/funcnodes_react_flow/src/react/packages/funcnodes-react-flow/dist";
 
 type FileDownloadProps = {
   filename: string;
   content: string;
 };
 
-const renderpluginfactory = ({
-  React,
-  fnrf_zst,
-  NodeContext,
-}: pluginversion.RenderPluginFactoryProps): pluginversion.RendererPlugin => {
-  const FileInput = ({ iostore }: pluginversion.InputRendererProps) => {
+const renderpluginfactory = ({}: RenderPluginFactoryProps) => {
+  const FileInput = ({}: InputRendererProps) => {
     const fileInput = React.useRef<HTMLInputElement>(null);
-    const io = iostore.use();
+    const iostore = useIOStore();
+    const io_parent_store = useIOStore("parent");
+    const node_id = iostore.use((s) => s.node);
+    const connected = iostore.use((s) => s.connected);
+    const set_io_value = useSetIOValue();
+    const { worker } = useWorkerApi();
+    const fnrf = useFuncNodesContext();
     const setProgress = (
       p: number,
       total: number | undefined,
       start: number
     ) => {
-      fnrf_zst.on_node_action({
+      fnrf.on_node_action({
         type: "update",
-        id: io.node,
+        id: node_id,
         node: {
           progress: {
             prefix: "Uploading",
@@ -35,21 +55,18 @@ const renderpluginfactory = ({
         from_remote: true,
       });
     };
-    const nodecontext = React.useContext(NodeContext);
 
     const on_change = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (!files || files.length === 0) return;
-      if (!nodecontext) return;
-      const node = nodecontext.node_data;
-      const parent_io_store = node.io["parent"];
-      if (!parent_io_store) return;
-      const parent_io = parent_io_store.getState();
-      let parentpath = undefined;
+      if (!io_parent_store) return;
+      const parent_io = io_parent_store.getState();
+      let parentpath: string | undefined = undefined;
       for (let i = 0; i < 10; i++) {
         try {
-          if (parent_io_store.valuestore.getState().full) {
-            parentpath = parent_io_store.valuestore.getState().full?.value.path;
+          const full = io_parent_store.valuestore.getState().full;
+          if (full) {
+            parentpath = (full.value as any)?.["path"]?.toString();
             break;
           }
         } catch (e) {}
@@ -62,7 +79,7 @@ const renderpluginfactory = ({
 
       const start = new Date().getTime();
 
-      const resp: string | undefined = await fnrf_zst.worker?.upload_file({
+      const resp: string | undefined = await worker?.upload_file({
         files: files,
         onProgressCallback: (loaded: number, total?: number) => {
           setProgress(loaded, total, start);
@@ -70,12 +87,7 @@ const renderpluginfactory = ({
         root: parentpath,
       });
 
-      fnrf_zst.worker?.set_io_value({
-        nid: io.node,
-        ioid: io.id,
-        value: resp,
-        set_default: true,
-      });
+      set_io_value(resp, true);
     };
 
     return (
@@ -85,13 +97,13 @@ const renderpluginfactory = ({
           type="file"
           // value={v}
           onChange={on_change}
-          disabled={io.connected}
+          disabled={connected}
           style={{ display: "none" }}
           ref={fileInput}
         />
         <button
           className="nodedatainput styledinput"
-          disabled={io.connected}
+          disabled={connected}
           onClick={() => {
             fileInput.current?.click();
           }}
@@ -102,18 +114,24 @@ const renderpluginfactory = ({
     );
   };
 
-  const FolderInput = ({ iostore }: pluginversion.InputRendererProps) => {
+  const FolderInput = ({}: InputRendererProps) => {
     const fileInput = React.useRef<HTMLInputElement>(null);
-    const nodecontext = React.useContext(NodeContext);
-    const io = iostore.use();
+    const iostore = useIOStore();
+    const io_parent_store = useIOStore("parent");
+    const node_id = iostore.use((s) => s.node);
+    const connected = iostore.use((s) => s.connected);
+    const { worker } = useWorkerApi();
+    const fnrf = useFuncNodesContext();
+
+    const set_io_value = useSetIOValue();
     const setProgress = (
       p: number,
       total: number | undefined,
       start: number
     ) => {
-      fnrf_zst.on_node_action({
+      fnrf.on_node_action({
         type: "update",
-        id: io.node,
+        id: node_id,
         node: {
           progress: {
             prefix: "Uploading",
@@ -131,17 +149,15 @@ const renderpluginfactory = ({
     const on_change = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (!files || files.length === 0) return;
-      if (!nodecontext) return;
-      const node = nodecontext.node_data;
-      const parent_io_store = node.io["parent"];
-      if (!parent_io_store) return;
+      if (!io_parent_store) return;
 
       let parentpath = undefined;
-      const parentio = parent_io_store.getState();
+      const parentio = io_parent_store.getState();
       for (let i = 0; i < 10; i++) {
         try {
-          if (parent_io_store.valuestore.getState().full) {
-            parentpath = parent_io_store.valuestore.getState().full?.value.path;
+          const full = io_parent_store.valuestore.getState().full;
+          if (full) {
+            parentpath = (full.value as any)?.["path"]?.toString();
             break;
           }
         } catch (e) {}
@@ -154,19 +170,14 @@ const renderpluginfactory = ({
 
       const start = new Date().getTime();
 
-      const resp: string | undefined = await fnrf_zst.worker?.upload_file({
+      const resp: string | undefined = await worker?.upload_file({
         files: files,
         onProgressCallback: (loaded: number, total?: number) => {
           setProgress(loaded, total, start);
         },
         root: parentpath,
       });
-      fnrf_zst.worker?.set_io_value({
-        nid: io.node,
-        ioid: io.id,
-        value: resp,
-        set_default: true,
-      });
+      set_io_value(resp, true);
     };
     return (
       <div>
@@ -174,7 +185,7 @@ const renderpluginfactory = ({
           className="nodedatainput styledinput"
           type="file"
           onChange={on_change}
-          disabled={io.connected}
+          disabled={connected}
           style={{ display: "none" }}
           ref={fileInput}
           /* @ts-expect-error */
@@ -184,7 +195,7 @@ const renderpluginfactory = ({
         />
         <button
           className="nodedatainput styledinput"
-          disabled={io.connected}
+          disabled={connected}
           onClick={() => {
             fileInput.current?.click();
           }}
@@ -195,29 +206,26 @@ const renderpluginfactory = ({
     );
   };
 
-  const FileDownload = ({ iostore }: pluginversion.OutputRendererProps) => {
+  const FileDownload = ({}: OutputRendererProps) => {
     const fileDownload = React.useRef<HTMLAnchorElement>(null);
-    const io = iostore.use();
-    const download = async () => {
-      const fullvalue = await fnrf_zst.worker?.get_io_full_value({
-        nid: io.node,
-        ioid: io.id,
-      });
-      const { filename, content } = fullvalue as FileDownloadProps;
-      // Convert the base64 content to a binary buffer
-      const byteCharacters = atob(content);
-      const byteNumbers = new Array(byteCharacters.length)
-        .fill(null)
-        .map((_, i) => byteCharacters.charCodeAt(i));
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray]); // Blob defaults to a generic MIME type (e.g., "application/octet-stream")
+    const get_full_value = useIOGetFullValue();
+    const filename = useIOValueStore("filename");
+    console.log(filename);
+    const download = React.useCallback(async () => {
+      if (!get_full_value) return;
+      if (!filename) return;
+      const filenamestring = filename.preview?.toString() ?? "";
+      if (!filenamestring) return;
+      const fullvalue = (await get_full_value()) as
+        | ArrayBufferDataStructure
+        | undefined;
+      if (!fullvalue) return;
 
-      const url = URL.createObjectURL(blob); // Create an object URL for the blob
       const a = fileDownload.current;
-      a?.setAttribute("href", url);
-      a?.setAttribute("download", filename);
+      a?.setAttribute("href", fullvalue.objectUrl);
+      a?.setAttribute("download", filenamestring);
       a?.click();
-    };
+    }, [get_full_value, filename]);
 
     return (
       <div>
@@ -235,7 +243,7 @@ const renderpluginfactory = ({
     );
   };
 
-  return {
+  const MyRendererPlugin: RendererPlugin = {
     input_renderers: {
       "funcnodes_files.FileUpload": FileInput,
       "funcnodes_files.FolderUpload": FolderInput,
@@ -244,11 +252,13 @@ const renderpluginfactory = ({
       "funcnodes_files.FileDownload": FileDownload,
     },
   };
+
+  return MyRendererPlugin;
 };
 
-const Plugin: pluginversion.FuncNodesReactPlugin = {
+const Plugin: FuncNodesReactPlugin = {
   renderpluginfactory: renderpluginfactory,
-  v: "1",
+  v: LATEST_VERSION,
 };
 
 export default Plugin;
