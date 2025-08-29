@@ -23,11 +23,7 @@
         "declarationDir": "dist",
         "outDir": "dist",
         "baseUrl": "./", /* Specify the base directory to resolve non-relative module names. */
-        "paths": { /* Specify a set of entries that re-map imports to additional lookup locations. */
-            "@linkdlab/funcnodes_react_flow_plugin": [
-                "../../../../frontend/funcnodes_react_flow/src/react/packages/funcnodes-react-flow-plugin"
-            ],
-        }
+        "paths": { /* Specify a set of entries that re-map imports to additional lookup locations. */}
     },
     "include": [
         "src"

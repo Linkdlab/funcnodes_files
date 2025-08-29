@@ -14,14 +14,6 @@ export default defineConfig(({ mode }) => ({
       insertTypesEntry: true,
     }),
   ],
-  resolve: {
-    alias: {
-      "@linkdlab/funcnodes_react_flow_plugin": path.resolve(
-        __dirname,
-        "../../../../frontend/funcnodes_react_flow/src/react/packages/funcnodes-react-flow-plugin/src/index.ts"
-      ),
-    },
-  },
   server: {
     watch: {
       usePolling: true,

@@ -15,8 +15,8 @@ import {
   useSetIOValue,
   useFuncNodesContext,
   useIOGetFullValue,
-} from "@linkdlab/funcnodes_react_flow_plugin";
-import { ArrayBufferDataStructure } from "../../../../../frontend/funcnodes_react_flow/src/react/packages/funcnodes-react-flow/dist";
+  ArrayBufferDataStructure,
+} from "@linkdlab/funcnodes-react-flow-plugin";
 
 type FileDownloadProps = {
   filename: string;

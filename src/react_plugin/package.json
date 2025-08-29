@@ -18,6 +18,8 @@
         "react": "^19.0.0"
     },
     "devDependencies": {
+        "@linkdlab/funcnodes-react-flow-plugin": "^1.0.1",
+        "@linkdlab/funcnodes_react_flow": "^1.0.0",
         "@types/react": "^19.0.0",
         "@vitejs/plugin-react": "^4.0.0",
         "react": "^19.1.1",
