@@ -14,4 +14,4 @@ recursive-exclude .venv *
 recursive-exclude */.venv *
 
 
-prune src/react_plugin
+prune src/react_plugin*
